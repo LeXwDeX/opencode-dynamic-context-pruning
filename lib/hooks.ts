@@ -38,6 +38,7 @@ import { type HostPermissionSnapshot } from "./host-permissions"
 import { compressPermission, syncCompressPermissionState } from "./compress-permission"
 import { checkSession, ensureSessionInitialized, saveSessionState, syncToolCache } from "./state"
 import { cacheSystemPromptTokens } from "./ui/utils"
+import { computeInputBudget } from "./input-budget"
 
 const INTERNAL_AGENT_SIGNATURES = [
     "You are a title generator",
@@ -52,11 +53,14 @@ export function createSystemPromptHandler(
     prompts: PromptStore,
 ) {
     return async (
-        input: { sessionID?: string; model: { limit: { context: number } } },
+        input: {
+            sessionID?: string
+            model: { limit: { context: number; input?: number; output?: number } }
+        },
         output: { system: string[] },
     ) => {
         if (input.model?.limit?.context) {
-            state.modelContextLimit = input.model.limit.context
+            state.modelContextLimit = computeInputBudget(input.model.limit)
             logger.debug("Cached model context limit", { limit: state.modelContextLimit })
         }
 
