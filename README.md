@@ -64,6 +64,9 @@ Each level overrides the previous, so project settings take priority over global
     "$schema": "https://raw.githubusercontent.com/Opencode-DCP/opencode-dynamic-context-pruning/master/dcp.schema.json",
     // Enable or disable the plugin
     "enabled": true,
+    // Automatically update npm-installed DCP when a newer npm latest is available.
+    // Version-locked plugin specs are not updated.
+    "autoUpdate": true,
     // Enable debug logging to ~/.config/opencode/logs/dcp/
     "debug": false,
     // Notification display: "off", "minimal", or "detailed"
