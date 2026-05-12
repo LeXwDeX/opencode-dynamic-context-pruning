@@ -13,7 +13,6 @@ import {
     stripHallucinationsFromString,
     stripStaleMetadata,
     syncCompressionBlocks,
-    computeInputBudget,
 } from "./messages"
 import { renderSystemPrompt, type PromptStore } from "./prompts"
 import { buildProtectedToolsExtension } from "./prompts/extensions/system"
@@ -54,17 +53,11 @@ export function createSystemPromptHandler(
     prompts: PromptStore,
 ) {
     return async (
-        input: {
-            sessionID?: string
-            model: { limit: { context: number; input?: number; output?: number } }
-        },
+        input: { sessionID?: string; model: { limit: { context: number } } },
         output: { system: string[] },
     ) => {
         if (input.model?.limit?.context) {
-            const inputBudget = computeInputBudget(input.model.limit)
-            if (inputBudget !== undefined) {
-                state.modelContextLimit = inputBudget
-            }
+            state.modelContextLimit = input.model.limit.context
             logger.debug("Cached model context limit", { limit: state.modelContextLimit })
         }
 
