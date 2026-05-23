@@ -53,6 +53,25 @@ export const injectCompressNudges = (
         state.nudges.contextLimitAnchors.clear()
         state.nudges.turnNudgeAnchors.clear()
         state.nudges.iterationNudgeAnchors.clear()
+
+        // Inject continuation nudge so the model knows to resume its task after compression
+        const continuationReminder =
+            "\n<dcp-system-reminder>Compression complete. Resume your previous task from where you left off.</dcp-system-reminder>"
+        if (lastMessage) {
+            const targetMessage = lastMessage.message
+            let injected = false
+            for (const part of targetMessage.parts) {
+                if (part.type === "text" && typeof part.text === "string") {
+                    part.text += continuationReminder
+                    injected = true
+                    break
+                }
+            }
+            if (!injected) {
+                targetMessage.parts.push(createSyntheticTextPart(targetMessage, continuationReminder))
+            }
+        }
+
         void saveSessionState(state, logger)
         return
     }
