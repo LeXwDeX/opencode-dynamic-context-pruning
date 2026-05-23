@@ -1,6 +1,3 @@
-export const ITERATION_NUDGE = `<dcp-system-reminder>
-You've been iterating for a while after the last user message.
-
-If there is a closed portion that is unlikely to be referenced immediately (for example, finished research before implementation), use the compress tool on it now.
-</dcp-system-reminder>
+export const ITERATION_NUDGE = `
+已进行多次迭代但未收到新的用户输入。考虑压缩早期步骤以保持上下文清晰。
 `
