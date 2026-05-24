@@ -43,12 +43,7 @@ export const checkSession = async (
         }
     }
 
-    // opencode's /compact is a transparent operation that preserves all messages in DB
-    // (it inserts a summary message and tags pre-compact messages with type:"compaction" parts).
-    // The msg_X IDs DCP tracks (in messageIds and prune.messages blocks) remain VALID after
-    // compaction — they still exist in DB and Session.messages returns them all.
-    // Therefore we do NOT reset DCP state on compaction. We only track the timestamp for
-    // observability and to suppress re-triggering on the in-memory marker.
+    // opencode /compact preserves all msg_* rows in DB, so DCP state remains valid
     const lastCompactionTimestamp = findLastCompactionTimestamp(messages)
     if (lastCompactionTimestamp > state.lastCompaction) {
         state.lastCompaction = lastCompactionTimestamp

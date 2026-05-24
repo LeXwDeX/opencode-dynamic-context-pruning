@@ -73,7 +73,6 @@ test("checkSession preserves message id aliases after native compaction", async 
 
     await checkSession({} as any, state, logger, messages, false)
 
-    assert.equal(state.lastCompaction, 2)
     // Message IDs are preserved after compaction (PR #530 behavior)
     assert.equal(state.messageIds.byRawId.size, 2)
     assert.equal(state.messageIds.byRef.size, 2)

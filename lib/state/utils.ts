@@ -329,7 +329,5 @@ export function getActiveSummaryTokenUsage(state: SessionState): number {
 }
 
 export function resetOnCompaction(_state: SessionState): void {
-    // Native opencode /compact inserts a summary message but keeps the original msg_* rows
-    // addressable in the session DB, so DCP compression blocks and mNNNN aliases remain valid.
-    // Keep this exported symbol for backward compatibility, but make it intentionally inert.
+    // opencode /compact preserves all msg_* rows, so DCP state remains valid
 }
