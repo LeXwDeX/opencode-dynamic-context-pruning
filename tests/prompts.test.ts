@@ -108,15 +108,15 @@ test("prompt store exposes bundled message-mode compress prompt", () => {
     try {
         const runtimePrompts = fixture.store.getRuntimePrompts()
 
-        assert.match(runtimePrompts.compressMessage, /selected individual messages/i)
+        assert.match(runtimePrompts.compressMessage, /选定的单条消息/)
         assert.match(
             runtimePrompts.compressMessage,
-            /Only use raw message IDs of the form `mNNNN`\./,
+            /只使用.*mNNNN.*形式的原始消息 ID/,
         )
-        assert.match(runtimePrompts.compressMessage, /priority="high"/)
-        assert.match(runtimePrompts.compressMessage, /high-priority messages/i)
-        assert.match(runtimePrompts.compressMessage, /BLOCKED/)
-        assert.match(runtimePrompts.compressMessage, /cannot be compressed/i)
+        assert.match(runtimePrompts.compressMessage, /priority.*属性/)
+        assert.match(runtimePrompts.compressMessage, /高优先级消息/)
+        assert.match(runtimePrompts.compressMessage, /标记为/)
+        assert.match(runtimePrompts.compressMessage, /不能被压缩/)
         assert.doesNotMatch(runtimePrompts.compressMessage, /THE FORMAT OF COMPRESS/)
     } finally {
         fixture.cleanup()
@@ -154,10 +154,10 @@ test("prompt store exposes bundled range-mode compress prompt", () => {
     try {
         const runtimePrompts = fixture.store.getRuntimePrompts()
 
-        assert.match(runtimePrompts.compressRange, /Collapse a range in the conversation/i)
-        assert.match(runtimePrompts.compressRange, /COMPRESSED BLOCK PLACEHOLDERS/)
-        assert.match(runtimePrompts.compressRange, /BATCHING/)
-        assert.match(runtimePrompts.compressRange, /content` array/)
+        assert.match(runtimePrompts.compressRange, /将对话中的一个范围折叠/)
+        assert.match(runtimePrompts.compressRange, /压缩块占位符/)
+        assert.match(runtimePrompts.compressRange, /批量处理/)
+        assert.match(runtimePrompts.compressRange, /content` 数组/)
     } finally {
         fixture.cleanup()
     }

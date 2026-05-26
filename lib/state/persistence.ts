@@ -33,12 +33,20 @@ export interface PersistedNudges {
     iterationNudgeAnchors?: string[]
 }
 
+export interface PersistedMessageIdState {
+    byRawId: Record<string, string>
+    byRef: Record<string, string>
+    nextRef: number
+}
+
 export interface PersistedSessionState {
     sessionName?: string
     prune: PersistedPrune
     nudges: PersistedNudges
     stats: SessionStats
     lastUpdated: string
+    lastCompaction?: number
+    messageIds?: PersistedMessageIdState
 }
 
 const STORAGE_DIR = join(
@@ -99,6 +107,12 @@ export async function saveSessionState(
             },
             stats: sessionState.stats,
             lastUpdated: new Date().toISOString(),
+            lastCompaction: sessionState.lastCompaction,
+            messageIds: {
+                byRawId: Object.fromEntries(sessionState.messageIds.byRawId),
+                byRef: Object.fromEntries(sessionState.messageIds.byRef),
+                nextRef: sessionState.messageIds.nextRef,
+            },
         }
 
         await writePersistedSessionState(sessionState.sessionId, state, logger)

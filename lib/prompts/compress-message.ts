@@ -1,43 +1,43 @@
-export const COMPRESS_MESSAGE = `Collapse selected individual messages in the conversation into detailed summaries.
+export const COMPRESS_MESSAGE = `将对话中选定的单条消息折叠为详细摘要。
 
-THE SUMMARY
-Your summary must be EXHAUSTIVE. Capture file paths, function signatures, decisions made, constraints discovered, key findings, tool outcomes, and user intent details that matter... EVERYTHING that preserves the value of the selected message after the raw message is removed.
+摘要要求
+摘要必须详尽。捕获文件路径、函数签名、所做决策、发现的约束、关键发现、工具结果，以及重要的用户意图细节……所有在原始消息被移除后保留其价值的内容。
 
-USER INTENT FIDELITY
-When a selected message contains user intent, preserve that intent with extra care. Do not change scope, constraints, priorities, acceptance criteria, or requested outcomes.
-Directly quote short user instructions when that best preserves exact meaning.
+用户意图保真
+当选定消息包含用户意图时，格外小心地保留该意图。不要改变范围、约束、优先级、验收标准或请求的结果。
+当直接引用简短用户指令最能保留精确含义时，直接引用。
 
-Yet be LEAN. Strip away the noise: failed attempts that led nowhere, verbose tool output, and repetition. What remains should be pure signal - golden nuggets of detail that preserve full understanding with zero ambiguity.
-If a message contains no significant technical decisions, code changes, or user requirements, produce a minimal one-line summary rather than a detailed one.
+同时保持精简。去除噪音：无果的失败尝试、冗长的工具输出和重复。留下的应该是纯信号——保留完整理解、零歧义的精华细节。
+如果消息不包含重要的技术决策、代码变更或用户需求，生成最小化的一行摘要而非详细摘要。
 
-MESSAGE IDS
-You specify individual raw messages by ID using the injected IDs visible in the conversation:
+消息 ID
+使用对话中可见的注入 ID 按 ID 指定单条原始消息：
 
-- \`mNNNN\` IDs identify raw messages
+- \`mNNNN\` ID 标识原始消息
 
-Each message has an ID inside XML metadata tags like \`<dcp-message-id priority="high">m0007</dcp-message-id>\`.
-The same ID tag appears in every tool output of the message it belongs to — each unique ID identifies one complete message.
-Treat these tags as message metadata only, not as content to summarize. Use only the inner \`mNNNN\` value as the \`messageId\`.
-The \`priority\` attribute indicates relative context cost. You MUST compress high-priority messages when their full text is no longer necessary for the active task.
-If prior compress-tool results are present, always compress and summarize them minimally only as part of a broader compression pass. Do not invoke the compress tool solely to re-compress an earlier compression result.
-Messages marked as \`<dcp-message-id>BLOCKED</dcp-message-id>\` cannot be compressed.
+每条消息在 XML 元数据标签内有 ID，如 \`\`。
+相同的 ID 标签出现在该消息所属的每个工具输出中——每个唯一 ID 标识一条完整消息。
+将这些标签仅视为消息元数据，而非要摘要的内容。只使用内部的 \`mNNNN\` 值作为 \`messageId\`。
+\`priority\` 属性表示相对上下文成本。当高优先级消息的完整文本对当前任务不再必要时，你必须压缩它们。
+如果存在之前的压缩工具结果，始终在更广泛的压缩过程中将它们最小化地压缩和摘要。不要仅为了重新压缩之前的压缩结果而调用压缩工具。
+标记为 \`\` 的消息不能被压缩。
 
-Rules:
+规则：
 
-- Pick each \`messageId\` directly from injected IDs visible in context.
-- Only use raw message IDs of the form \`mNNNN\`.
-- Ignore XML attributes such as \`priority\` when copying the ID; use only the inner \`mNNNN\` value.
-- Do not invent IDs. Use only IDs that are present in context.
+- 直接从上下文中可见的注入 ID 选取每个 \`messageId\`。
+- 只使用 \`mNNNN\` 形式的原始消息 ID。
+- 复制 ID 时忽略 \`priority\` 等 XML 属性；只使用内部的 \`mNNNN\` 值。
+- 不要发明 ID。只使用上下文中存在的 ID。
 
-BATCHING
-Select MANY messages in a single tool call when they are safe to compress.
-Each entry should summarize exactly one message, and the tool can receive as many entries as needed in one batch.
+批量处理
+当多条消息可以安全压缩时，在单次工具调用中选择多条消息。
+每个条目应恰好摘要一条消息，工具可以在一次批量中接收任意数量的条目。
 
-GENERAL CLEANUP
-Use the topic "general cleanup" for broad cleanup passes.
-During general cleanup, compress all medium and high-priority messages that are not relevant to the active task.
-Optimize for reducing context footprint, not for grouping messages by topic.
-Do not compress away still-active instructions, unresolved questions, or constraints that are likely to matter soon.
-Prioritize the earliest messages in the context as they will be the least relevant to the active task.
-General cleanup should be done periodically between other normal compression tool passes, not as the primary form of compression.
+通用清理
+使用主题"通用清理"进行广泛的清理。
+在通用清理期间，压缩所有与当前任务无关的中高优先级消息。
+优化减少上下文占用，而非按主题分组消息。
+不要压缩掉仍然活跃的指令、未解决的问题或可能很快重要的约束。
+优先处理上下文中最早的消息，因为它们与当前任务的相关性最低。
+通用清理应定期在其他正常压缩工具调用之间进行，而非作为压缩的主要形式。
 `

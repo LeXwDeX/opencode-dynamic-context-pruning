@@ -181,6 +181,28 @@ export async function ensureSessionInitialized(
         totalPruneTokens: persisted.stats?.totalPruneTokens || 0,
     }
 
+    if (typeof persisted.lastCompaction === "number") {
+        state.lastCompaction = Math.max(state.lastCompaction, persisted.lastCompaction)
+    }
+    if (persisted.messageIds && typeof persisted.messageIds === "object") {
+        state.messageIds = {
+            byRawId: new Map<string, string>(
+                Object.entries(persisted.messageIds.byRawId || {}).filter(
+                    (e): e is [string, string] => typeof e[1] === "string",
+                ),
+            ),
+            byRef: new Map<string, string>(
+                Object.entries(persisted.messageIds.byRef || {}).filter(
+                    (e): e is [string, string] => typeof e[1] === "string",
+                ),
+            ),
+            nextRef:
+                typeof persisted.messageIds.nextRef === "number" && persisted.messageIds.nextRef >= 1
+                    ? persisted.messageIds.nextRef
+                    : 1,
+        }
+    }
+
     const applied = applyPendingCompressionDurations(state)
     if (applied > 0) {
         await saveSessionState(state, logger)

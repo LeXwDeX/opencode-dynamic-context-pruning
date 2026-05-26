@@ -25,7 +25,7 @@ export function stripStaleMetadata(messages: WithParts[]): void {
         }
 
         message.parts = message.parts.map((part) => {
-            if (part.type !== "text" && part.type !== "tool" && part.type !== "reasoning") {
+            if (part.type !== "text" && part.type !== "tool") {
                 return part
             }
 

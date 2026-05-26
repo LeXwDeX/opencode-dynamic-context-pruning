@@ -330,16 +330,4 @@ export function getActiveSummaryTokenUsage(state: SessionState): number {
 
 export function resetOnCompaction(state: SessionState): void {
     state.toolParameters.clear()
-    state.prune.tools = new Map<string, number>()
-    state.prune.messages = createPruneMessagesState()
-    state.messageIds = {
-        byRawId: new Map<string, string>(),
-        byRef: new Map<string, string>(),
-        nextRef: 1,
-    }
-    state.nudges = {
-        contextLimitAnchors: new Set<string>(),
-        turnNudgeAnchors: new Set<string>(),
-        iterationNudgeAnchors: new Set<string>(),
-    }
 }

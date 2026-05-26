@@ -1,60 +1,73 @@
-export const COMPRESS_RANGE = `Collapse a range in the conversation into a detailed summary.
+export const COMPRESS_RANGE = `将对话中的一个范围折叠为详细摘要。
 
-THE SUMMARY
-Your summary must be EXHAUSTIVE. Capture file paths, function signatures, decisions made, constraints discovered, key findings... EVERYTHING that maintains context integrity. This is not a brief note - it is an authoritative record so faithful that the original conversation adds no value.
+输出格式
+每个摘要必须使用 Markdown 标题结构：
 
-USER INTENT FIDELITY
-When the compressed range includes user messages, preserve the user's intent with extra care. Do not change scope, constraints, priorities, acceptance criteria, or requested outcomes.
-Directly quote user messages when they are short enough to include safely. Direct quotes are preferred when they best preserve exact meaning.
+\`\`\`
+## 分析
+[分析：探索了什么、遇到了什么问题、尝试了哪些方法]
 
-Yet be LEAN. Strip away the noise: failed attempts that led nowhere, verbose tool outputs, back-and-forth exploration. What remains should be pure signal - golden nuggets of detail that preserve full understanding with zero ambiguity.
+## 总结
+[总结：最终结论、关键决策、重要文件路径、函数签名、代码变更]
+\`\`\`
 
-COMPRESSED BLOCK PLACEHOLDERS
-When the selected range includes previously compressed blocks, use this exact placeholder format when referencing one:
+禁止使用 \`<analysis>\` 或 \`<summary>\` 等 XML 标签。只使用 Markdown \`## 分析\` 和 \`## 总结\` 标题。
+
+摘要要求
+摘要必须详尽。捕获文件路径、函数签名、所做决策、发现的约束、关键发现……所有维持上下文完整性的内容。这不是简短笔记——而是一份权威记录，忠实到原始对话不再有任何价值。
+
+用户意图保真
+当压缩范围包含用户消息时，格外小心地保留用户意图。不要改变范围、约束、优先级、验收标准或请求的结果。
+当用户消息足够短时直接引用。直接引用在最能保留精确含义时优先使用。
+
+同时保持精简。去除噪音：无果的失败尝试、冗长的工具输出、反复探索。留下的应该是纯信号——保留完整理解、零歧义的精华细节。
+
+压缩块占位符
+当选定范围包含之前压缩的块时，引用时使用以下精确占位符格式：
 
 - \`(bN)\`
 
-Compressed block sections in context are clearly marked with a header:
+上下文中的压缩块部分用标题明确标记：
 
-- \`[Compressed conversation section]\`
+- \`[已压缩的对话部分]\`
 
-Compressed block IDs always use the \`bN\` form (never \`mNNNN\`) and are represented in the same XML metadata tag format.
+压缩块 ID 始终使用 \`bN\` 形式（不是 \`mNNNN\`），并以相同的 XML 元数据标签格式表示。
 
-Rules:
+规则：
 
-- Include every required block placeholder exactly once.
-- Do not invent placeholders for blocks outside the selected range.
-- Treat \`(bN)\` placeholders as RESERVED TOKENS. Do not emit \`(bN)\` text anywhere except intentional placeholders.
-- If you need to mention a block in prose, use plain text like \`compressed bN\` (not as a placeholder).
-- Preflight check before finalizing: the set of \`(bN)\` placeholders in your summary must exactly match the required set, with no duplicates.
+- 每个必需的块占位符恰好包含一次。
+- 不要为选定范围之外的块发明占位符。
+- 将 \`(bN)\` 占位符视为保留标记。除了有意占位符外，不要在任何地方输出 \`(bN)\` 文本。
+- 如果需要在正文中提及一个块，使用纯文本如 \`压缩块 bN\`（不作为占位符）。
+- 最终确定前的预检：摘要中的 \`(bN)\` 占位符集合必须与必需集合完全匹配，无重复。
 
-These placeholders are semantic references. They will be replaced with the full stored compressed block content when the tool processes your output.
+这些占位符是语义引用。当工具处理你的输出时，它们将被替换为完整的存储压缩块内容。
 
-FLOW PRESERVATION WITH PLACEHOLDERS
-When you use compressed block placeholders, write the surrounding summary text so it still reads correctly AFTER placeholder expansion.
+占位符的流畅性
+使用压缩块占位符时，编写周围的摘要文本，使其在占位符展开后仍然正确可读。
 
-- Treat each placeholder as a stand-in for a full conversation segment, not as a short label.
-- Ensure transitions before and after each placeholder preserve chronology and causality.
-- Do not write text that depends on the placeholder staying literal (for example, "as noted in \`(b2)\`").
-- Your final meaning must be coherent once each placeholder is replaced with its full compressed block content.
+- 将每个占位符视为完整对话段的替代，而不是短标签。
+- 确保每个占位符前后的过渡保留时间顺序和因果关系。
+- 不要编写依赖于占位符保持字面意义的文本（例如"如 \`(b2)\` 中所述"）。
+- 当每个占位符被替换为其完整压缩块内容后，最终含义必须连贯。
 
-BOUNDARY IDS
-You specify boundaries by ID using the injected IDs visible in the conversation:
+边界 ID
+使用对话中可见的注入 ID 按 ID 指定边界：
 
-- \`mNNNN\` IDs identify raw messages
-- \`bN\` IDs identify previously compressed blocks
+- \`mNNNN\` ID 标识原始消息
+- \`bN\` ID 标识之前压缩的块
 
-Each message has an ID inside XML metadata tags like \`<dcp-message-id>...</dcp-message-id>\`.
-The same ID tag appears in every tool output of the message it belongs to — each unique ID identifies one complete message.
-Treat these tags as boundary metadata only, not as tool result content.
+每条消息在 XML 元数据标签内有 ID，如 \`\`。
+相同的 ID 标签出现在该消息所属的每个工具输出中——每个唯一 ID 标识一条完整消息。
+将这些标签仅视为边界元数据，而非工具结果内容。
 
-Rules:
+规则：
 
-- Pick \`startId\` and \`endId\` directly from injected IDs in context.
-- IDs must exist in the current visible context.
-- \`startId\` must appear before \`endId\`.
-- Do not invent IDs. Use only IDs that are present in context.
+- 直接从上下文中的注入 ID 选取 \`startId\` 和 \`endId\`。
+- ID 必须存在于当前可见上下文中。
+- \`startId\` 必须出现在 \`endId\` 之前。
+- 不要发明 ID。只使用上下文中存在的 ID。
 
-BATCHING
-When multiple independent ranges are ready and their boundaries do not overlap, include all of them as separate entries in the \`content\` array of a single tool call. Each entry should have its own \`startId\`, \`endId\`, and \`summary\`.
+批量处理
+当多个独立范围已准备好且边界不重叠时，将它们全部作为单独条目包含在单次工具调用的 \`content\` 数组中。每个条目应有自己的 \`startId\`、\`endId\` 和 \`summary\`。
 `

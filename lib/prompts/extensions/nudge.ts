@@ -6,22 +6,25 @@ export function buildCompressedBlockGuidance(state: SessionState): string {
         .sort((a, b) => a - b)
         .map((id) => `b${id}`)
     const blockCount = refs.length
-    const blockList = blockCount > 0 ? refs.join(", ") : "none"
+    const blockList = blockCount > 0 ? refs.join(", ") : "无"
 
     return [
-        "Compressed block context:",
-        `- Active compressed blocks in this session: ${blockCount} (${blockList})`,
-        "- If your selected compression range includes any listed block, include each required placeholder exactly once in the summary using `(bN)`.",
+        "压缩块上下文：",
+        `- 此会话中的活跃压缩块：${blockCount} 个（${blockList}）`,
+        "- 如果你选择的压缩范围包含任何列出的块，在摘要中使用 `(bN)` 恰好包含每个必需的占位符一次。",
     ].join("\n")
 }
 
 export function renderMessagePriorityGuidance(priorityLabel: string, refs: string[]): string {
-    const refList = refs.length > 0 ? refs.join(", ") : "none"
+    const refList = refs.length > 0 ? refs.join(", ") : "无"
+
+    const normalized = priorityLabel.toLowerCase()
+    const priorityLabelZh = normalized === "high" ? "高" : normalized === "medium" ? "中" : "低"
 
     return [
-        "Message priority context:",
-        "- Higher-priority older messages consume more context and should be compressed right away if it is safe to do so.",
-        `- ${priorityLabel}-priority message IDs before this point: ${refList}`,
+        "消息优先级上下文：",
+        "- 高优先级的旧消息消耗更多上下文，如果安全的话应立即压缩。",
+        `- 此点之前的${priorityLabelZh}优先级消息 ID：${refList}`,
     ].join("\n")
 }
 
@@ -30,7 +33,7 @@ export function appendGuidanceToDcpTag(nudgeText: string, guidance: string): str
         return nudgeText
     }
 
-    const closeTag = "</dcp-system-reminder>"
+    const closeTag = ""
     const closeTagIndex = nudgeText.lastIndexOf(closeTag)
 
     if (closeTagIndex === -1) {

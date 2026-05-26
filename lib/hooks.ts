@@ -122,36 +122,46 @@ export function createChatMessageTransformHandler(
             return
         }
 
-        stripHallucinations(output.messages)
-        cacheSystemPromptTokens(state, output.messages)
-        assignMessageRefs(state, output.messages)
-        syncCompressionBlocks(state, logger, output.messages)
-        syncToolCache(state, config, logger, output.messages)
-        buildToolIdList(state, output.messages)
-        prune(state, logger, config, output.messages)
-        await injectExtendedSubAgentResults(
-            client,
-            state,
-            logger,
-            output.messages,
-            config.experimental.allowSubAgents,
-        )
-        const compressionPriorities = buildPriorityMap(config, state, output.messages)
-        prompts.reload()
-        injectCompressNudges(
-            state,
-            config,
-            logger,
-            output.messages,
-            prompts.getRuntimePrompts(),
-            compressionPriorities,
-        )
-        injectMessageIds(state, config, output.messages, compressionPriorities)
-        applyPendingManualTrigger(state, output.messages, logger)
-        stripStaleMetadata(output.messages)
+        const originalMessages = output.messages
+        output.messages = structuredClone(output.messages)
 
-        if (state.sessionId) {
-            await logger.saveContext(state.sessionId, output.messages)
+        try {
+            stripHallucinations(output.messages)
+            cacheSystemPromptTokens(state, output.messages)
+            assignMessageRefs(state, output.messages)
+            syncCompressionBlocks(state, logger, output.messages)
+            syncToolCache(state, config, logger, output.messages)
+            buildToolIdList(state, output.messages)
+            prune(state, logger, config, output.messages)
+            await injectExtendedSubAgentResults(
+                client,
+                state,
+                logger,
+                output.messages,
+                config.experimental.allowSubAgents,
+            )
+            const compressionPriorities = buildPriorityMap(config, state, output.messages)
+            prompts.reload()
+            injectCompressNudges(
+                state,
+                config,
+                logger,
+                output.messages,
+                prompts.getRuntimePrompts(),
+                compressionPriorities,
+            )
+            injectMessageIds(state, config, output.messages, compressionPriorities)
+            applyPendingManualTrigger(state, output.messages, logger)
+            stripStaleMetadata(output.messages)
+
+            if (state.sessionId) {
+                await logger.saveContext(state.sessionId, output.messages)
+            }
+        } catch (error) {
+            logger.error("Chat message transform failed, returning original messages", {
+                error: error instanceof Error ? error.message : String(error),
+            })
+            output.messages = originalMessages
         }
     }
 }

@@ -155,9 +155,9 @@ test("compress message tool appends non-editable format extension", () => {
         },
     } as any)
 
-    assert.match(tool.description, /THE FORMAT OF COMPRESS/)
+    assert.match(tool.description, /压缩格式/)
     assert.match(tool.description, /messageId: string/)
-    assert.match(tool.description, /Raw message ID only: mNNNN/)
+    assert.match(tool.description, /仅原始消息 ID：mNNNN/)
 })
 
 test("compress message mode batches individual message summaries", async () => {

@@ -58,7 +58,7 @@ function buildCompactedMessages(sessionID: string): WithParts[] {
     ]
 }
 
-test("checkSession resets message id aliases after native compaction", async () => {
+test("checkSession preserves message id aliases after native compaction", async () => {
     const sessionID = `ses_message_ids_after_compaction_${Date.now()}`
     const messages = buildCompactedMessages(sessionID)
     const state = createSessionState()
@@ -69,21 +69,21 @@ test("checkSession resets message id aliases after native compaction", async () 
     state.messageIds.byRawId.set("old-message-9999", "m9999")
     state.messageIds.byRef.set("m9998", "old-message-9998")
     state.messageIds.byRef.set("m9999", "old-message-9999")
-    state.messageIds.nextRef = 9999
+    state.messageIds.nextRef = 5
 
     await checkSession({} as any, state, logger, messages, false)
 
     assert.equal(state.lastCompaction, 2)
-    assert.equal(state.messageIds.byRawId.size, 0)
-    assert.equal(state.messageIds.byRef.size, 0)
-    assert.equal(state.messageIds.nextRef, 1)
+    assert.equal(state.messageIds.byRawId.size, 2)
+    assert.equal(state.messageIds.byRef.size, 2)
+    assert.equal(state.messageIds.nextRef, 5)
 
     const assigned = assignMessageRefs(state, messages)
 
     assert.equal(assigned, 2)
-    assert.equal(state.messageIds.byRawId.get("msg-assistant-summary"), "m0001")
-    assert.equal(state.messageIds.byRawId.get("msg-user-follow-up"), "m0002")
-    assert.equal(state.messageIds.byRef.get("m0001"), "msg-assistant-summary")
-    assert.equal(state.messageIds.byRef.get("m0002"), "msg-user-follow-up")
-    assert.equal(state.messageIds.nextRef, 3)
+    assert.equal(state.messageIds.byRawId.get("msg-assistant-summary"), "m0005")
+    assert.equal(state.messageIds.byRawId.get("msg-user-follow-up"), "m0006")
+    assert.equal(state.messageIds.byRef.get("m0005"), "msg-assistant-summary")
+    assert.equal(state.messageIds.byRef.get("m0006"), "msg-user-follow-up")
+    assert.equal(state.messageIds.nextRef, 7)
 })

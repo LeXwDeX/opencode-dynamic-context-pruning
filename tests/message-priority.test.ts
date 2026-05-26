@@ -412,8 +412,8 @@ test("message-mode nudges append to existing text parts and list only earlier vi
     const injectedNudge = messages[2]?.parts[0]
     assert.equal(injectedNudge?.type, "text")
     assert.match((injectedNudge as any).text, /\n\n<dcp-system-reminder>Base context nudge/)
-    assert.match((injectedNudge as any).text, /Message priority context:/)
-    assert.match((injectedNudge as any).text, /High-priority message IDs before this point: m0001/)
+    assert.match((injectedNudge as any).text, /消息优先级上下文：/)
+    assert.match((injectedNudge as any).text, /此点之前的高优先级消息 ID：m0001/)
     assert.doesNotMatch((injectedNudge as any).text, /m0002/)
     assert.doesNotMatch((injectedNudge as any).text, /m0003/)
     assert.doesNotMatch((injectedNudge as any).text, /m0004/)
@@ -452,7 +452,7 @@ test("message-mode nudges exclude protected user messages from priority guidance
 
     const injectedNudge = messages[2]?.parts[0]
     assert.equal(injectedNudge?.type, "text")
-    assert.match((injectedNudge as any).text, /High-priority message IDs before this point: m0002/)
+    assert.match((injectedNudge as any).text, /此点之前的高优先级消息 ID：m0002/)
     assert.doesNotMatch((injectedNudge as any).text, /m0001/)
 })
 
@@ -497,8 +497,8 @@ test("range-mode nudges append to existing text parts before tool outputs", () =
     assert.equal(injectedNudge?.type, "text")
     assert.equal(toolOutput?.type, "tool")
     assert.match((injectedNudge as any).text, /\n\n<dcp-system-reminder>Base context nudge/)
-    assert.match((injectedNudge as any).text, /Compressed block context:/)
-    assert.match((injectedNudge as any).text, /Active compressed blocks in this session: 1 \(b7\)/)
+    assert.match((injectedNudge as any).text, /压缩块上下文：/)
+    assert.match((injectedNudge as any).text, /此会话中的活跃压缩块：1 个（b7）/)
     assert.equal((toolOutput as any).state.output, "task output body")
 })
 
