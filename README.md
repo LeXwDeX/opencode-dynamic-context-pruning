@@ -117,11 +117,11 @@ Each level overrides the previous, so project settings take priority over global
         // Soft upper threshold: above this, DCP keeps injecting strong
         // compression nudges (based on nudgeFrequency), so compression is
         // much more likely. Accepts: number or "X%" of model context window.
-        "maxContextLimit": 100000,
+        "maxContextLimit": "85%",
         // Soft lower threshold for reminder nudges: below this, turn/iteration
         // reminders are off (compression less likely). At/above this, reminders
         // are on. Accepts: number or "X%" of model context window.
-        "minContextLimit": 50000,
+        "minContextLimit": "50%",
         // Optional per-model override for maxContextLimit by providerID/modelID.
         // If present, this wins over the global maxContextLimit.
         // Accepts: number or "X%".
@@ -143,7 +143,7 @@ Each level overrides the previous, so project settings take priority over global
         "iterationNudgeThreshold": 15,
         // Controls how likely compression is after user messages
         // ("strong" = more likely, "soft" = less likely)
-        "nudgeForce": "soft",
+        "nudgeForce": "strong",
         // Tool names whose completed outputs are appended to the compression
         "protectedTools": [],
         // Preserve text wrapped in <protect>...</protect> when compressed
