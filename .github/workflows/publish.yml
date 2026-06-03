@@ -21,6 +21,8 @@ jobs:
                   node-version: "20"
                   cache: "npm"
                   registry-url: "https://registry.npmjs.org"
+                  scope: "@lexwdex-org"
+                  always-auth: true
 
             - name: Install dependencies
               run: npm ci
@@ -30,6 +32,21 @@ jobs:
 
             - name: Build
               run: npm run build
+
+            - name: Verify npm auth
+              run: npm whoami
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Ensure version is not already published
+              run: |
+                  PKG_NAME=$(node -p "require('./package.json').name")
+                  PKG_VERSION=$(node -p "require('./package.json').version")
+
+                  if npm view "${PKG_NAME}@${PKG_VERSION}" version >/dev/null 2>&1; then
+                    echo "::error::${PKG_NAME}@${PKG_VERSION} is already published. Bump version before publishing."
+                    exit 1
+                  fi
 
             - name: Publish to NPM
               run: npm publish --access public
