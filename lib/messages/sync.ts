@@ -33,20 +33,20 @@ export const syncCompressionBlocks = (
     messagesState.activeByAnchorMessageId.clear()
 
     const now = Date.now()
-    const missingOriginBlockIds: number[] = []
+    const missingAnchorBlockIds: number[] = []
     const orderedBlocks = Array.from(messagesState.blocksById.values()).sort(sortBlocksByCreation)
 
     for (const block of orderedBlocks) {
-        const hasOriginMessage =
-            typeof block.compressMessageId === "string" &&
-            block.compressMessageId.length > 0 &&
-            messageIds.has(block.compressMessageId)
+        const hasAnchorMessage =
+            typeof block.anchorMessageId === "string" &&
+            block.anchorMessageId.length > 0 &&
+            messageIds.has(block.anchorMessageId)
 
-        if (!hasOriginMessage) {
+        if (!hasAnchorMessage) {
             block.active = false
             block.deactivatedAt = now
             block.deactivatedByBlockId = undefined
-            missingOriginBlockIds.push(block.blockId)
+            missingAnchorBlockIds.push(block.blockId)
             continue
         }
 
@@ -114,9 +114,9 @@ export const syncCompressionBlocks = (
         }
     }
 
-    if (missingOriginBlockIds.length > 0 || deactivatedCount > 0 || reactivatedCount > 0) {
+    if (missingAnchorBlockIds.length > 0 || deactivatedCount > 0 || reactivatedCount > 0) {
         logger.info("Synced compress block state", {
-            missingOriginCount: missingOriginBlockIds.length,
+            missingAnchorCount: missingAnchorBlockIds.length,
             deactivatedCount,
             reactivatedCount,
         })

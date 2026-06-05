@@ -158,7 +158,7 @@ export async function handleRecompressCommand(ctx: RecompressCommandContext): Pr
         return
     }
 
-    if (target.blocks.some((block) => !availableMessageIds.has(block.compressMessageId))) {
+    if (target.blocks.some((block) => !availableMessageIds.has(block.anchorMessageId))) {
         await sendIgnoredMessage(
             client,
             sessionId,

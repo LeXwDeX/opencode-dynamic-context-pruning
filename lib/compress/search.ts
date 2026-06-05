@@ -75,16 +75,26 @@ export function resolveBoundaryIds(
     const startReference = lookup.get(parsedStartId.ref)
     const endReference = lookup.get(parsedEndId.ref)
 
-    if (!startReference) {
-        issues.push(
-            `startId ${parsedStartId.ref} is not available in the current conversation context. Choose an injected ID visible in context.`,
-        )
-    }
+    if (!startReference || !endReference) {
+        const availableBlockRefs = Array.from(lookup.keys())
+            .filter((key) => key.startsWith("b"))
+            .sort((a, b) => Number.parseInt(a.slice(1), 10) - Number.parseInt(b.slice(1), 10))
+            .join(", ")
+        const blockHint = availableBlockRefs
+            ? ` Available block IDs: ${availableBlockRefs}.`
+            : " No block IDs available."
 
-    if (!endReference) {
-        issues.push(
-            `endId ${parsedEndId.ref} is not available in the current conversation context. Choose an injected ID visible in context.`,
-        )
+        if (!startReference) {
+            issues.push(
+                `startId ${parsedStartId.ref} is not available in the current conversation context. Choose an injected ID visible in context.${blockHint}`,
+            )
+        }
+
+        if (!endReference) {
+            issues.push(
+                `endId ${parsedEndId.ref} is not available in the current conversation context. Choose an injected ID visible in context.${blockHint}`,
+            )
+        }
     }
 
     if (issues.length > 0) {
@@ -261,6 +271,34 @@ function buildBoundaryLookup(
                 anchorMessageId: summary.anchorMessageId,
             })
         }
+    }
+
+    // Fallback: include inactive blocks whose anchor still exists in the conversation
+    for (const [blockId, block] of state.prune.messages.blocksById) {
+        if (block.active) {
+            continue // already handled above
+        }
+        const blockRef = formatBlockRef(blockId)
+        if (lookup.has(blockRef)) {
+            continue // already in lookup (shouldn't happen for inactive, but safer)
+        }
+        const anchorMessage = context.rawMessagesById.get(block.anchorMessageId)
+        if (!anchorMessage) {
+            continue // anchor gone — block is truly orphaned
+        }
+        if (isIgnoredUserMessage(anchorMessage)) {
+            continue
+        }
+        const rawIndex = context.rawIndexById.get(block.anchorMessageId)
+        if (rawIndex === undefined) {
+            continue
+        }
+        lookup.set(blockRef, {
+            kind: "compressed-block",
+            rawIndex,
+            blockId: block.blockId,
+            anchorMessageId: block.anchorMessageId,
+        })
     }
 
     return lookup
