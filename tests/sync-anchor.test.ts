@@ -124,7 +124,7 @@ test("resolveBoundaryIds resolves inactive block when anchorMessageId exists (fa
     assert.equal(result.startReference.blockId, 1)
 })
 
-test("resolveBoundaryIds error includes available block IDs", () => {
+test("resolveBoundaryIds error includes available block IDs and message IDs", () => {
     const state = createSessionState()
     const sessionID = "s1"
 
@@ -146,6 +146,39 @@ test("resolveBoundaryIds error includes available block IDs", () => {
         },
         (err: Error) => {
             assert.match(err.message, /No block IDs available/)
+            assert.match(err.message, /Available message IDs/)
+            assert.match(err.message, /m0001/)
+            return true
+        },
+    )
+})
+
+test("resolveBoundaryIds error explains compacted-out message IDs", () => {
+    const state = createSessionState()
+    const sessionID = "s1"
+
+    // Create 5 messages and assign refs, so m0001-m0005 all exist in byRef
+    const messages = [
+        makeMessage(sessionID, "msg-1", "user", "text 1"),
+        makeMessage(sessionID, "msg-2", "assistant", "text 2"),
+        makeMessage(sessionID, "msg-3", "user", "text 3"),
+        makeMessage(sessionID, "msg-4", "assistant", "text 4"),
+        makeMessage(sessionID, "msg-5", "user", "text 5"),
+    ]
+    assignMessageRefs(state, messages)
+
+    // Simulate compaction: remove msg-3 from the conversation
+    // (but m0003 mapping persists in state.messageIds.byRef)
+    const compactedMessages = messages.filter((m) => m.info.id !== "msg-3")
+    const context = buildSearchContext(state, compactedMessages)
+
+    assert.throws(
+        () => {
+            resolveBoundaryIds(context, state, "m0003", "m0005")
+        },
+        (err: Error) => {
+            assert.match(err.message, /compacted out/)
+            assert.match(err.message, /Available message IDs/)
             return true
         },
     )

@@ -76,23 +76,50 @@ export function resolveBoundaryIds(
     const endReference = lookup.get(parsedEndId.ref)
 
     if (!startReference || !endReference) {
-        const availableBlockRefs = Array.from(lookup.keys())
+        const allKeys = Array.from(lookup.keys())
+
+        const availableBlockRefs = allKeys
             .filter((key) => key.startsWith("b"))
-            .sort((a, b) => Number.parseInt(a.slice(1), 10) - Number.parseInt(b.slice(1), 10))
-            .join(", ")
-        const blockHint = availableBlockRefs
-            ? ` Available block IDs: ${availableBlockRefs}.`
+            .sort(
+                (a, b) => Number.parseInt(a.slice(1), 10) - Number.parseInt(b.slice(1), 10),
+            )
+
+        const availableMsgRefs = allKeys
+            .filter((key) => key.startsWith("m"))
+            .sort(
+                (a, b) => Number.parseInt(a.slice(1), 10) - Number.parseInt(b.slice(1), 10),
+            )
+
+        const blockHint = availableBlockRefs.length
+            ? ` Available block IDs: ${availableBlockRefs.join(", ")}.`
             : " No block IDs available."
 
+        const msgHint =
+            availableMsgRefs.length === 0
+                ? " No message IDs available."
+                : availableMsgRefs.length <= 10
+                    ? ` Available message IDs: ${availableMsgRefs.join(", ")}.`
+                    : ` Available message IDs: ${availableMsgRefs[0]} to ${availableMsgRefs[availableMsgRefs.length - 1]} (${availableMsgRefs.length} total).`
+
+        const hint = `${msgHint}${blockHint}`
+
         if (!startReference) {
+            const wasKnown = state.messageIds.byRef.has(parsedStartId.ref)
+            const reason = wasKnown
+                ? " (message was likely compacted out of the conversation)"
+                : " (invalid ID)"
             issues.push(
-                `startId ${parsedStartId.ref} is not available in the current conversation context. Choose an injected ID visible in context.${blockHint}`,
+                `startId ${parsedStartId.ref} is not available${reason}. Choose an injected ID visible in context.${hint}`,
             )
         }
 
         if (!endReference) {
+            const wasKnown = state.messageIds.byRef.has(parsedEndId.ref)
+            const reason = wasKnown
+                ? " (message was likely compacted out of the conversation)"
+                : " (invalid ID)"
             issues.push(
-                `endId ${parsedEndId.ref} is not available in the current conversation context. Choose an injected ID visible in context.${blockHint}`,
+                `endId ${parsedEndId.ref} is not available${reason}. Choose an injected ID visible in context.${hint}`,
             )
         }
     }
