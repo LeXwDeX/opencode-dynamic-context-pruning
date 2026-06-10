@@ -6,6 +6,12 @@ import { tmpdir } from "node:os"
 import { Logger } from "../lib/logger"
 import { PromptStore } from "../lib/prompts/store"
 import { SYSTEM as SYSTEM_PROMPT } from "../lib/prompts/system"
+import {
+    RANGE_FORMAT_EXTENSION,
+    MESSAGE_FORMAT_EXTENSION,
+    buildRangeFormatExtension,
+    buildMessageFormatExtension,
+} from "../lib/prompts/extensions/tool"
 
 function createPromptStoreFixture(overrideContent?: string, overrideFileName = "system.md") {
     const rootDir = mkdtempSync(join(tmpdir(), "opencode-dcp-prompts-"))
@@ -109,10 +115,7 @@ test("prompt store exposes bundled message-mode compress prompt", () => {
         const runtimePrompts = fixture.store.getRuntimePrompts()
 
         assert.match(runtimePrompts.compressMessage, /选定的单条消息/)
-        assert.match(
-            runtimePrompts.compressMessage,
-            /只使用.*mNNNN.*形式的原始消息 ID/,
-        )
+        assert.match(runtimePrompts.compressMessage, /只使用.*mNNNN.*形式的原始消息 ID/)
         assert.match(runtimePrompts.compressMessage, /priority.*属性/)
         assert.match(runtimePrompts.compressMessage, /高优先级消息/)
         assert.match(runtimePrompts.compressMessage, /标记为/)
@@ -161,4 +164,38 @@ test("prompt store exposes bundled range-mode compress prompt", () => {
     } finally {
         fixture.cleanup()
     }
+})
+
+test("buildRangeFormatExtension(false) matches the backward-compatible constant", () => {
+    assert.equal(buildRangeFormatExtension(false), RANGE_FORMAT_EXTENSION)
+})
+
+test("buildMessageFormatExtension(false) matches the backward-compatible constant", () => {
+    assert.equal(buildMessageFormatExtension(false), MESSAGE_FORMAT_EXTENSION)
+})
+
+test("buildRangeFormatExtension(true) marks summary as optional", () => {
+    const extension = buildRangeFormatExtension(true)
+    assert.match(extension, /summary\?/)
+    assert.match(extension, /可省略/)
+    assert.match(extension, /外部模型/)
+})
+
+test("buildMessageFormatExtension(true) marks summary as optional", () => {
+    const extension = buildMessageFormatExtension(true)
+    assert.match(extension, /summary\?/)
+    assert.match(extension, /可省略/)
+    assert.match(extension, /外部模型/)
+})
+
+test("buildRangeFormatExtension(false) does not mark summary as optional", () => {
+    const extension = buildRangeFormatExtension(false)
+    assert.match(extension, /summary: string/)
+    assert.doesNotMatch(extension, /可省略/)
+})
+
+test("buildMessageFormatExtension(false) does not mark summary as optional", () => {
+    const extension = buildMessageFormatExtension(false)
+    assert.match(extension, /summary: string/)
+    assert.doesNotMatch(extension, /可省略/)
 })

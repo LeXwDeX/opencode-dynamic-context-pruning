@@ -383,3 +383,131 @@ test("compress range mode rejects overlapping batched ranges", async () => {
 
     assert.equal(state.prune.messages.blocksById.size, 0)
 })
+
+test("compress range generates summary via external model when summary omitted", async () => {
+    const sessionID = `ses_range_external_model_${Date.now()}`
+    const rawMessages = buildMessages(sessionID)
+    const state = createSessionState()
+    const logger = new Logger(false)
+    const config = buildConfig()
+    config.compress.externalModel = {
+        url: "http://localhost:8000/v1",
+        model: "qwen2.5:7b",
+        retries: 0,
+    }
+
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+        return new Response(
+            JSON.stringify({
+                choices: [
+                    {
+                        message: {
+                            content:
+                                "Externally generated summary: captured initial investigation and follow-up.",
+                        },
+                    },
+                ],
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+        )
+    }) as typeof fetch
+
+    try {
+        const tool = createCompressRangeTool({
+            client: {
+                session: {
+                    messages: async () => ({ data: rawMessages }),
+                    get: async () => ({ data: { parentID: null } }),
+                },
+            },
+            state,
+            logger,
+            config,
+            prompts: {
+                reload() {},
+                getRuntimePrompts() {
+                    return {
+                        compressRange: "Summarize this conversation range.",
+                        compressMessage: "",
+                    }
+                },
+            },
+        } as any)
+
+        const result = await tool.execute(
+            {
+                topic: "External range test",
+                content: [
+                    {
+                        startId: "m0001",
+                        endId: "m0002",
+                    } as any,
+                ],
+            },
+            {
+                ask: async () => {},
+                metadata: () => {},
+                sessionID,
+                messageID: "msg-compress-range-external",
+            },
+        )
+
+        assert.equal(result, "Compressed 2 messages into [Compressed conversation section].")
+        assert.equal(state.prune.messages.blocksById.size, 1)
+        const block = Array.from(state.prune.messages.blocksById.values())[0]
+        assert.match(block?.summary || "", /Externally generated summary/)
+    } finally {
+        globalThis.fetch = originalFetch
+    }
+})
+
+test("compress range throws clear error when summary missing and no external model configured", async () => {
+    const sessionID = `ses_range_no_ext_${Date.now()}`
+    const rawMessages = buildMessages(sessionID)
+    const state = createSessionState()
+    const logger = new Logger(false)
+    const config = buildConfig()
+    // no externalModel configured
+
+    const tool = createCompressRangeTool({
+        client: {
+            session: {
+                messages: async () => ({ data: rawMessages }),
+                get: async () => ({ data: { parentID: null } }),
+            },
+        },
+        state,
+        logger,
+        config,
+        prompts: {
+            reload() {},
+            getRuntimePrompts() {
+                return { compressRange: "", compressMessage: "" }
+            },
+        },
+    } as any)
+
+    await assert.rejects(
+        tool.execute(
+            {
+                topic: "Missing summary",
+                content: [
+                    {
+                        startId: "m0001",
+                        endId: "m0002",
+                    } as any,
+                ],
+            },
+            {
+                ask: async () => {},
+                metadata: () => {},
+                sessionID,
+                messageID: "msg-compress-range-no-ext",
+            },
+        ),
+        /未配置外部模型/,
+    )
+
+    assert.equal(state.prune.messages.blocksById.size, 0)
+})

@@ -32,8 +32,10 @@ export function validateArgs(args: CompressRangeToolArgs): void {
             throw new Error(`${prefix}.endId is required and must be a non-empty string`)
         }
 
-        if (typeof entry?.summary !== "string" || entry.summary.trim().length === 0) {
-            throw new Error(`${prefix}.summary is required and must be a non-empty string`)
+        if (entry?.summary !== undefined) {
+            if (typeof entry.summary !== "string" || entry.summary.trim().length === 0) {
+                throw new Error(`${prefix}.summary must be a non-empty string when provided`)
+            }
         }
     }
 }

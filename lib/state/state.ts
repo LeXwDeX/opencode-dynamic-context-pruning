@@ -197,7 +197,8 @@ export async function ensureSessionInitialized(
                 ),
             ),
             nextRef:
-                typeof persisted.messageIds.nextRef === "number" && persisted.messageIds.nextRef >= 1
+                typeof persisted.messageIds.nextRef === "number" &&
+                persisted.messageIds.nextRef >= 1
                     ? persisted.messageIds.nextRef
                     : 1,
         }

@@ -1,7 +1,7 @@
 import { tool } from "@opencode-ai/plugin"
 import type { ToolContext } from "./types"
 import { countTokens } from "../token-utils"
-import { RANGE_FORMAT_EXTENSION } from "../prompts/extensions/tool"
+import { buildRangeFormatExtension } from "../prompts/extensions/tool"
 import { finalizeSession, prepareSession, type NotificationEntry } from "./pipeline"
 import {
     appendProtectedPromptInfo,
@@ -24,9 +24,36 @@ import {
     applyCompressionState,
     wrapCompressedSummary,
 } from "./state"
-import type { CompressRangeToolArgs } from "./types"
+import type { CompressRangeToolArgs, SearchContext } from "./types"
+import { generateSummaryViaExternal } from "./external-inference"
 
-function buildSchema() {
+function extractRangeText(
+    selection: { messageIds: string[] },
+    searchContext: SearchContext,
+): string {
+    const parts: string[] = []
+    for (const messageId of selection.messageIds) {
+        const msg = searchContext.rawMessagesById.get(messageId)
+        if (!msg) continue
+        for (const part of msg.parts) {
+            if (part.type === "text" && typeof part.text === "string") {
+                parts.push(part.text)
+            }
+        }
+    }
+    return parts.join("\n\n")
+}
+
+function buildSchema(externalModelEnabled: boolean) {
+    const summaryField = externalModelEnabled
+        ? tool.schema
+              .string()
+              .optional()
+              .describe(
+                  "Complete technical summary replacing all content in range (optional when external model is configured)",
+              )
+        : tool.schema.string().describe("Complete technical summary replacing all content in range")
+
     return {
         topic: tool.schema
             .string()
@@ -42,9 +69,7 @@ function buildSchema() {
                     endId: tool.schema
                         .string()
                         .describe("Message or block ID marking the end of range (e.g. m0012, b5)"),
-                    summary: tool.schema
-                        .string()
-                        .describe("Complete technical summary replacing all content in range"),
+                    summary: summaryField,
                 }),
             )
             .describe(
@@ -56,10 +81,11 @@ function buildSchema() {
 export function createCompressRangeTool(ctx: ToolContext): ReturnType<typeof tool> {
     ctx.prompts.reload()
     const runtimePrompts = ctx.prompts.getRuntimePrompts()
+    const externalModelEnabled = ctx.config.compress.externalModel !== undefined
 
     return tool({
-        description: runtimePrompts.compressRange + RANGE_FORMAT_EXTENSION,
-        args: buildSchema(),
+        description: runtimePrompts.compressRange + buildRangeFormatExtension(externalModelEnabled),
+        args: buildSchema(externalModelEnabled),
         async execute(args, toolCtx) {
             const input = args as CompressRangeToolArgs
             validateArgs(input)
@@ -76,6 +102,22 @@ export function createCompressRangeTool(ctx: ToolContext): ReturnType<typeof too
             const resolvedPlans = resolveRanges(input, searchContext, ctx.state)
             validateNonOverlapping(resolvedPlans)
 
+            if (ctx.config.compress.externalModel) {
+                for (const plan of resolvedPlans) {
+                    if (plan.entry.summary === undefined) {
+                        const userContent = extractRangeText(plan.selection, searchContext)
+                        const generated = await generateSummaryViaExternal(
+                            ctx.config.compress.externalModel,
+                            {
+                                systemPrompt: runtimePrompts.compressRange,
+                                userContent,
+                            },
+                        )
+                        plan.entry.summary = generated
+                    }
+                }
+            }
+
             const notifications: NotificationEntry[] = []
             const preparedPlans: Array<{
                 entry: (typeof resolvedPlans)[number]["entry"]
@@ -87,6 +129,11 @@ export function createCompressRangeTool(ctx: ToolContext): ReturnType<typeof too
             let totalCompressedMessages = 0
 
             for (const plan of resolvedPlans) {
+                if (plan.entry.summary === undefined) {
+                    throw new Error(
+                        "缺少 summary：未配置外部模型，请提供 summary 或配置 OPENCODE_DCP_EXTERNAL_COMPRESS_URL/MODEL",
+                    )
+                }
                 const parsedPlaceholders = parseBlockPlaceholders(plan.entry.summary)
                 const missingBlockIds = validateSummaryPlaceholders(
                     parsedPlaceholders,

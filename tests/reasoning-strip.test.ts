@@ -3,11 +3,7 @@ import test from "node:test"
 import { stripStaleMetadata } from "../lib/messages/reasoning-strip"
 import type { WithParts } from "../lib/state"
 
-function buildUserMessage(
-    modelID: string,
-    providerID: string,
-    sessionID = "ses_test",
-): WithParts {
+function buildUserMessage(modelID: string, providerID: string, sessionID = "ses_test"): WithParts {
     return {
         info: {
             id: "msg-user",

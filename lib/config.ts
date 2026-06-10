@@ -3,6 +3,7 @@ import { join, dirname } from "path"
 import { homedir } from "os"
 import { parse } from "jsonc-parser/lib/esm/main.js"
 import type { PluginInput } from "@opencode-ai/plugin"
+import { applyExternalModelEnvOverride } from "./config-env-override"
 
 type Permission = "ask" | "allow" | "deny"
 type CompressMode = "range" | "message"
@@ -10,6 +11,14 @@ type CompressMode = "range" | "message"
 export interface Deduplication {
     enabled: boolean
     protectedTools: string[]
+}
+
+export interface ExternalModelConfig {
+    url: string
+    apiKey?: string
+    model: string
+    timeout?: number
+    retries?: number
 }
 
 export interface CompressConfig {
@@ -27,6 +36,7 @@ export interface CompressConfig {
     protectedTools: string[]
     protectTags: boolean
     protectUserMessages: boolean
+    externalModel?: ExternalModelConfig
 }
 
 export interface Commands {
@@ -126,6 +136,7 @@ export const VALID_CONFIG_KEYS = new Set([
     "compress.protectedTools",
     "compress.protectTags",
     "compress.protectUserMessages",
+    "compress.externalModel",
     "strategies",
     "strategies.deduplication",
     "strategies.deduplication.enabled",
@@ -522,6 +533,35 @@ export function validateConfigTypes(config: Record<string, any>): ValidationErro
                 })
             }
 
+            if (compress.externalModel !== undefined) {
+                if (
+                    typeof compress.externalModel !== "object" ||
+                    compress.externalModel === null ||
+                    Array.isArray(compress.externalModel)
+                ) {
+                    errors.push({
+                        key: "compress.externalModel",
+                        expected: "object with url and model",
+                        actual: typeof compress.externalModel,
+                    })
+                } else {
+                    if (typeof compress.externalModel.url !== "string") {
+                        errors.push({
+                            key: "compress.externalModel.url",
+                            expected: "string",
+                            actual: typeof compress.externalModel.url,
+                        })
+                    }
+                    if (typeof compress.externalModel.model !== "string") {
+                        errors.push({
+                            key: "compress.externalModel.model",
+                            expected: "string",
+                            actual: typeof compress.externalModel.model,
+                        })
+                    }
+                }
+            }
+
             if (
                 compress.showCompression !== undefined &&
                 typeof compress.showCompression !== "boolean"
@@ -689,6 +729,7 @@ const defaultConfig: PluginConfig = {
         protectedTools: [...COMPRESS_DEFAULT_PROTECTED_TOOLS],
         protectTags: false,
         protectUserMessages: false,
+        externalModel: undefined,
     },
     strategies: {
         deduplication: {
@@ -855,6 +896,7 @@ function mergeCompress(
         protectedTools: [...new Set([...base.protectedTools, ...(override.protectedTools ?? [])])],
         protectTags: override.protectTags ?? base.protectTags,
         protectUserMessages: override.protectUserMessages ?? base.protectUserMessages,
+        externalModel: override.externalModel ?? base.externalModel,
     }
 }
 
@@ -915,6 +957,9 @@ function deepCloneConfig(config: PluginConfig): PluginConfig {
             modelMaxLimits: { ...config.compress.modelMaxLimits },
             modelMinLimits: { ...config.compress.modelMinLimits },
             protectedTools: [...config.compress.protectedTools],
+            externalModel: config.compress.externalModel
+                ? { ...config.compress.externalModel }
+                : undefined,
         },
         strategies: {
             deduplication: {
@@ -1002,6 +1047,8 @@ export function getConfig(ctx: PluginInput): PluginConfig {
         showConfigWarnings(ctx, layer.path, result.data, layer.isProject)
         config = mergeLayer(config, result.data)
     }
+
+    applyExternalModelEnvOverride(config)
 
     return config
 }

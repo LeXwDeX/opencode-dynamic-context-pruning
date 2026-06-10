@@ -210,9 +210,7 @@ test("prune does not prune non-pruned tool IDs", () => {
     const config = buildConfig()
 
     const messages: WithParts[] = [
-        buildAssistantMessage("msg1", [
-            toolPart("call1", "bash", "completed", "original output"),
-        ]),
+        buildAssistantMessage("msg1", [toolPart("call1", "bash", "completed", "original output")]),
     ]
 
     prune(state, logger, config, messages)
@@ -237,9 +235,7 @@ test("prune filterCompressedRanges removes messages in active blocks", () => {
 
     const messages: WithParts[] = [
         buildUserMessage("msg1", "first message"),
-        buildAssistantMessage("msg2", [
-            toolPart("call1", "bash", "completed", "output"),
-        ]),
+        buildAssistantMessage("msg2", [toolPart("call1", "bash", "completed", "output")]),
         buildUserMessage("msg3", "third message"),
     ]
 

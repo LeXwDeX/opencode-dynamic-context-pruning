@@ -215,6 +215,21 @@ The `protectedTools` arrays in `commands` and `strategies` add to this default l
 
 For the `compress` tool, `compress.protectedTools` ensures specific tool outputs are appended to the compressed summary. By default it includes `task`, `skill`, `todowrite`, and `todoread`.
 
+### External Model Compression (via Environment Variables)
+
+To use an external OpenAI-compatible model for generating compression summaries (cheaper than main model):
+
+```bash
+export OPENCODE_DCP_EXTERNAL_COMPRESS_URL="http://your-proxy/v1"
+export OPENCODE_DCP_EXTERNAL_COMPRESS_KEY="sk-..."
+export OPENCODE_DCP_EXTERNAL_COMPRESS_MODEL="deepseek-v4-flash"
+# Optional:
+export OPENCODE_DCP_EXTERNAL_COMPRESS_TIMEOUT="120000"  # ms, default 120s
+export OPENCODE_DCP_EXTERNAL_COMPRESS_RETRIES="1"       # default 1
+```
+
+When configured, the `compress` tool's `summary` field becomes optional — if omitted, DCP will automatically call the external model to generate the summary.
+
 ## Impact on Prompt Caching
 
 LLM providers cache prompts based on exact prefix matching. When DCP prunes content, it changes messages, which invalidates cached prefixes from that point forward.

@@ -342,7 +342,9 @@ test("purgeErrors skips non-error tools", () => {
 test("purgeErrors skips protected tools", () => {
     const state = createSessionState()
     const logger = new Logger(false)
-    const config = buildConfig({ purgeErrors: { enabled: true, turns: 1, protectedTools: ["bash"] } })
+    const config = buildConfig({
+        purgeErrors: { enabled: true, turns: 1, protectedTools: ["bash"] },
+    })
 
     state.toolIdList = ["call1"]
     state.currentTurn = 10

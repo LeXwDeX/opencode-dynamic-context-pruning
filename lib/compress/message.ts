@@ -1,7 +1,7 @@
 import { tool } from "@opencode-ai/plugin"
 import type { ToolContext } from "./types"
 import { countTokens } from "../token-utils"
-import { MESSAGE_FORMAT_EXTENSION } from "../prompts/extensions/tool"
+import { buildMessageFormatExtension } from "../prompts/extensions/tool"
 import { formatIssues, formatResult, resolveMessages, validateArgs } from "./message-utils"
 import { finalizeSession, prepareSession, type NotificationEntry } from "./pipeline"
 import { appendProtectedPromptInfo, appendProtectedTools } from "./protected-content"
@@ -11,9 +11,31 @@ import {
     applyCompressionState,
     wrapCompressedSummary,
 } from "./state"
-import type { CompressMessageToolArgs } from "./types"
+import type { CompressMessageToolArgs, SearchContext } from "./types"
+import { generateSummaryViaExternal } from "./external-inference"
 
-function buildSchema() {
+function extractMessageText(messageId: string, searchContext: SearchContext): string {
+    const msg = searchContext.rawMessagesById.get(messageId)
+    if (!msg) return ""
+    const parts: string[] = []
+    for (const part of msg.parts) {
+        if (part.type === "text" && typeof part.text === "string") {
+            parts.push(part.text)
+        }
+    }
+    return parts.join("\n\n")
+}
+
+function buildSchema(externalModelEnabled: boolean) {
+    const summaryField = externalModelEnabled
+        ? tool.schema
+              .string()
+              .optional()
+              .describe(
+                  "Complete technical summary replacing that one message (optional when external model is configured)",
+              )
+        : tool.schema.string().describe("Complete technical summary replacing that one message")
+
     return {
         topic: tool.schema
             .string()
@@ -29,9 +51,7 @@ function buildSchema() {
                     topic: tool.schema
                         .string()
                         .describe("Short label (3-5 words) for this one message summary"),
-                    summary: tool.schema
-                        .string()
-                        .describe("Complete technical summary replacing that one message"),
+                    summary: summaryField,
                 }),
             )
             .describe("Batch of individual message summaries to create in one tool call"),
@@ -41,10 +61,12 @@ function buildSchema() {
 export function createCompressMessageTool(ctx: ToolContext): ReturnType<typeof tool> {
     ctx.prompts.reload()
     const runtimePrompts = ctx.prompts.getRuntimePrompts()
+    const externalModelEnabled = ctx.config.compress.externalModel !== undefined
 
     return tool({
-        description: runtimePrompts.compressMessage + MESSAGE_FORMAT_EXTENSION,
-        args: buildSchema(),
+        description:
+            runtimePrompts.compressMessage + buildMessageFormatExtension(externalModelEnabled),
+        args: buildSchema(externalModelEnabled),
         async execute(args, toolCtx) {
             const input = args as CompressMessageToolArgs
             validateArgs(input)
@@ -69,6 +91,22 @@ export function createCompressMessageTool(ctx: ToolContext): ReturnType<typeof t
                 throw new Error(formatIssues(skippedIssues, skippedCount))
             }
 
+            if (ctx.config.compress.externalModel) {
+                for (const plan of plans) {
+                    if (plan.entry.summary === undefined) {
+                        const userContent = extractMessageText(plan.entry.messageId, searchContext)
+                        const generated = await generateSummaryViaExternal(
+                            ctx.config.compress.externalModel,
+                            {
+                                systemPrompt: runtimePrompts.compressMessage,
+                                userContent,
+                            },
+                        )
+                        plan.entry.summary = generated
+                    }
+                }
+            }
+
             const notifications: NotificationEntry[] = []
 
             const preparedPlans: Array<{
@@ -77,6 +115,11 @@ export function createCompressMessageTool(ctx: ToolContext): ReturnType<typeof t
             }> = []
 
             for (const plan of plans) {
+                if (plan.entry.summary === undefined) {
+                    throw new Error(
+                        "缺少 summary：未配置外部模型，请提供 summary 或配置 OPENCODE_DCP_EXTERNAL_COMPRESS_URL/MODEL",
+                    )
+                }
                 const summaryWithPromptInfo = appendProtectedPromptInfo(
                     plan.entry.summary,
                     plan.selection,

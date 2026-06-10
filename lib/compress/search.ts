@@ -80,15 +80,11 @@ export function resolveBoundaryIds(
 
         const availableBlockRefs = allKeys
             .filter((key) => key.startsWith("b"))
-            .sort(
-                (a, b) => Number.parseInt(a.slice(1), 10) - Number.parseInt(b.slice(1), 10),
-            )
+            .sort((a, b) => Number.parseInt(a.slice(1), 10) - Number.parseInt(b.slice(1), 10))
 
         const availableMsgRefs = allKeys
             .filter((key) => key.startsWith("m"))
-            .sort(
-                (a, b) => Number.parseInt(a.slice(1), 10) - Number.parseInt(b.slice(1), 10),
-            )
+            .sort((a, b) => Number.parseInt(a.slice(1), 10) - Number.parseInt(b.slice(1), 10))
 
         const blockHint = availableBlockRefs.length
             ? ` Available block IDs: ${availableBlockRefs.join(", ")}.`
@@ -98,8 +94,8 @@ export function resolveBoundaryIds(
             availableMsgRefs.length === 0
                 ? " No message IDs available."
                 : availableMsgRefs.length <= 10
-                    ? ` Available message IDs: ${availableMsgRefs.join(", ")}.`
-                    : ` Available message IDs: ${availableMsgRefs[0]} to ${availableMsgRefs[availableMsgRefs.length - 1]} (${availableMsgRefs.length} total).`
+                  ? ` Available message IDs: ${availableMsgRefs.join(", ")}.`
+                  : ` Available message IDs: ${availableMsgRefs[0]} to ${availableMsgRefs[availableMsgRefs.length - 1]} (${availableMsgRefs.length} total).`
 
         const hint = `${msgHint}${blockHint}`
 

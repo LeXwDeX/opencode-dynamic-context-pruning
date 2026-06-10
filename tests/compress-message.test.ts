@@ -888,3 +888,124 @@ test("compress message mode reports issues when every batch entry is skipped", a
 
     assert.equal(state.prune.messages.blocksById.size, 0)
 })
+
+test("compress message generates summary via external model when summary omitted", async () => {
+    const sessionID = `ses_message_external_model_${Date.now()}`
+    const rawMessages = buildMessages(sessionID)
+    const state = createSessionState()
+    const logger = new Logger(false)
+    const config = buildConfig()
+    config.compress.externalModel = {
+        url: "http://localhost:8000/v1",
+        model: "qwen2.5:7b",
+        retries: 0,
+    }
+
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = (async () => {
+        return new Response(
+            JSON.stringify({
+                choices: [
+                    {
+                        message: {
+                            content: "Externally generated message summary.",
+                        },
+                    },
+                ],
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+        )
+    }) as typeof fetch
+
+    try {
+        const tool = createCompressMessageTool({
+            client: {
+                session: {
+                    messages: async () => ({ data: rawMessages }),
+                    get: async () => ({ data: { parentID: null } }),
+                },
+            },
+            state,
+            logger,
+            config,
+            prompts: {
+                reload() {},
+                getRuntimePrompts() {
+                    return { compressMessage: "Summarize this message.", compressRange: "" }
+                },
+            },
+        } as any)
+
+        const result = await tool.execute(
+            {
+                topic: "External message test",
+                content: [
+                    {
+                        messageId: "m0002",
+                        topic: "External note",
+                    } as any,
+                ],
+            },
+            {
+                ask: async () => {},
+                metadata: () => {},
+                sessionID,
+                messageID: "msg-compress-message-external",
+            },
+        )
+
+        assert.equal(result, "Compressed 1 message into [Compressed conversation section].")
+        assert.equal(state.prune.messages.blocksById.size, 1)
+        const block = Array.from(state.prune.messages.blocksById.values())[0]
+        assert.match(block?.summary || "", /Externally generated message summary/)
+    } finally {
+        globalThis.fetch = originalFetch
+    }
+})
+
+test("compress message throws clear error when summary missing and no external model configured", async () => {
+    const sessionID = `ses_message_no_ext_${Date.now()}`
+    const rawMessages = buildMessages(sessionID)
+    const state = createSessionState()
+    const logger = new Logger(false)
+    const tool = createCompressMessageTool({
+        client: {
+            session: {
+                messages: async () => ({ data: rawMessages }),
+                get: async () => ({ data: { parentID: null } }),
+            },
+        },
+        state,
+        logger,
+        config: buildConfig(),
+        prompts: {
+            reload() {},
+            getRuntimePrompts() {
+                return { compressMessage: "", compressRange: "" }
+            },
+        },
+    } as any)
+
+    await assert.rejects(
+        tool.execute(
+            {
+                topic: "Missing summary",
+                content: [
+                    {
+                        messageId: "m0002",
+                        topic: "Missing note",
+                    } as any,
+                ],
+            },
+            {
+                ask: async () => {},
+                metadata: () => {},
+                sessionID,
+                messageID: "msg-compress-message-no-ext",
+            },
+        ),
+        /未配置外部模型/,
+    )
+
+    assert.equal(state.prune.messages.blocksById.size, 0)
+})

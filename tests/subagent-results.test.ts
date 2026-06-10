@@ -73,9 +73,7 @@ test("buildSubagentResultText returns empty for no messages", () => {
 })
 
 test("buildSubagentResultText returns last assistant text", () => {
-    const messages: WithParts[] = [
-        buildAssistantMessage("msg1", [textPart("Hello world")]),
-    ]
+    const messages: WithParts[] = [buildAssistantMessage("msg1", [textPart("Hello world")])]
     assert.equal(buildSubagentResultText(messages), "Hello world")
 })
 
@@ -96,9 +94,7 @@ test("buildSubagentResultText combines last two when second-to-last has compress
 })
 
 test("buildSubagentResultText handles empty text parts", () => {
-    const messages: WithParts[] = [
-        buildAssistantMessage("msg1", [textPart("")]),
-    ]
+    const messages: WithParts[] = [buildAssistantMessage("msg1", [textPart("")])]
     assert.equal(buildSubagentResultText(messages), "")
 })
 

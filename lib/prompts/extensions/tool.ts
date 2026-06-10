@@ -2,7 +2,16 @@
 // 因此不能通过自定义提示覆盖来修改。这些模式必须
 // 与工具的输入验证匹配，且不能独立更改。
 
-export const RANGE_FORMAT_EXTENSION = `
+export function buildRangeFormatExtension(externalModelEnabled: boolean): string {
+    const summaryField = externalModelEnabled
+        ? `summary?: string     // 替换范围内所有内容的完整技术摘要（可省略；外部模型生成）`
+        : `summary: string      // 替换范围内所有内容的完整技术摘要`
+
+    const externalHint = externalModelEnabled
+        ? `\n\n当启用外部模型压缩时，summary 字段可省略；插件将自动调用外部模型生成。`
+        : ""
+
+    return `
 压缩格式
 
 \`\`\`
@@ -12,13 +21,23 @@ export const RANGE_FORMAT_EXTENSION = `
     {
       startId: string,     // 范围开始的边界 ID：mNNNN 或 bN
       endId: string,       // 范围结束的边界 ID：mNNNN 或 bN
-      summary: string      // 替换范围内所有内容的完整技术摘要
+      ${summaryField}
     }
   ]
 }
-\`\`\``
+\`\`\`${externalHint}`
+}
 
-export const MESSAGE_FORMAT_EXTENSION = `
+export function buildMessageFormatExtension(externalModelEnabled: boolean): string {
+    const summaryField = externalModelEnabled
+        ? `summary?: string     // 替换该条消息的完整技术摘要（可省略；外部模型生成）`
+        : `summary: string      // 替换该条消息的完整技术摘要`
+
+    const externalHint = externalModelEnabled
+        ? `\n\n当启用外部模型压缩时，summary 字段可省略；插件将自动调用外部模型生成。`
+        : ""
+
+    return `
 压缩格式
 
 \`\`\`
@@ -28,8 +47,12 @@ export const MESSAGE_FORMAT_EXTENSION = `
     {
       messageId: string,   // 仅原始消息 ID：mNNNN（忽略 priority 等元数据属性）
       topic: string,       // 此单条消息摘要的短标签（3-5 个词）
-      summary: string      // 替换该条消息的完整技术摘要
+      ${summaryField}
     }
   ]
 }
-\`\`\``
+\`\`\`${externalHint}`
+}
+
+export const RANGE_FORMAT_EXTENSION = buildRangeFormatExtension(false)
+export const MESSAGE_FORMAT_EXTENSION = buildMessageFormatExtension(false)
