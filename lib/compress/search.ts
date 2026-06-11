@@ -53,13 +53,19 @@ export function resolveBoundaryIds(
     const issues: string[] = []
     const parsedStartId = parseBoundaryId(startId)
     const parsedEndId = parseBoundaryId(endId)
+    const hint = formatAvailableBoundaryHint(lookup)
+    const guidance = formatBoundaryUsageGuidance()
 
     if (parsedStartId === null) {
-        issues.push("startId is invalid. Use an injected message ID (mNNNN) or block ID (bN).")
+        issues.push(
+            `startId is invalid. Use an injected message ID (mNNNN) or block ID (bN).${hint}${guidance}`,
+        )
     }
 
     if (parsedEndId === null) {
-        issues.push("endId is invalid. Use an injected message ID (mNNNN) or block ID (bN).")
+        issues.push(
+            `endId is invalid. Use an injected message ID (mNNNN) or block ID (bN).${hint}${guidance}`,
+        )
     }
 
     if (issues.length > 0) {
@@ -76,36 +82,13 @@ export function resolveBoundaryIds(
     const endReference = lookup.get(parsedEndId.ref)
 
     if (!startReference || !endReference) {
-        const allKeys = Array.from(lookup.keys())
-
-        const availableBlockRefs = allKeys
-            .filter((key) => key.startsWith("b"))
-            .sort((a, b) => Number.parseInt(a.slice(1), 10) - Number.parseInt(b.slice(1), 10))
-
-        const availableMsgRefs = allKeys
-            .filter((key) => key.startsWith("m"))
-            .sort((a, b) => Number.parseInt(a.slice(1), 10) - Number.parseInt(b.slice(1), 10))
-
-        const blockHint = availableBlockRefs.length
-            ? ` Available block IDs: ${availableBlockRefs.join(", ")}.`
-            : " No block IDs available."
-
-        const msgHint =
-            availableMsgRefs.length === 0
-                ? " No message IDs available."
-                : availableMsgRefs.length <= 10
-                  ? ` Available message IDs: ${availableMsgRefs.join(", ")}.`
-                  : ` Available message IDs: ${availableMsgRefs[0]} to ${availableMsgRefs[availableMsgRefs.length - 1]} (${availableMsgRefs.length} total).`
-
-        const hint = `${msgHint}${blockHint}`
-
         if (!startReference) {
             const wasKnown = state.messageIds.byRef.has(parsedStartId.ref)
             const reason = wasKnown
                 ? " (message was likely compacted out of the conversation)"
                 : " (invalid ID)"
             issues.push(
-                `startId ${parsedStartId.ref} is not available${reason}. Choose an injected ID visible in context.${hint}`,
+                `startId ${parsedStartId.ref} is not available${reason}. Choose an injected ID visible in context.${hint}${guidance}`,
             )
         }
 
@@ -115,7 +98,7 @@ export function resolveBoundaryIds(
                 ? " (message was likely compacted out of the conversation)"
                 : " (invalid ID)"
             issues.push(
-                `endId ${parsedEndId.ref} is not available${reason}. Choose an injected ID visible in context.${hint}`,
+                `endId ${parsedEndId.ref} is not available${reason}. Choose an injected ID visible in context.${hint}${guidance}`,
             )
         }
     }
@@ -241,6 +224,35 @@ export function resolveAnchorMessageId(startReference: BoundaryReference): strin
         throw new Error("Failed to map boundary matches back to raw messages")
     }
     return startReference.messageId
+}
+
+function formatAvailableBoundaryHint(lookup: Map<string, BoundaryReference>): string {
+    const allKeys = Array.from(lookup.keys())
+
+    const availableBlockRefs = allKeys
+        .filter((key) => key.startsWith("b"))
+        .sort((a, b) => Number.parseInt(a.slice(1), 10) - Number.parseInt(b.slice(1), 10))
+
+    const availableMsgRefs = allKeys
+        .filter((key) => key.startsWith("m"))
+        .sort((a, b) => Number.parseInt(a.slice(1), 10) - Number.parseInt(b.slice(1), 10))
+
+    const blockHint = availableBlockRefs.length
+        ? ` Available block IDs: ${availableBlockRefs.join(", ")}.`
+        : " No block IDs available."
+
+    const msgHint =
+        availableMsgRefs.length === 0
+            ? " No message IDs available."
+            : availableMsgRefs.length <= 10
+              ? ` Available message IDs: ${availableMsgRefs.join(", ")}.`
+              : ` Available message IDs: ${availableMsgRefs[0]} to ${availableMsgRefs[availableMsgRefs.length - 1]} (${availableMsgRefs.length} total).`
+
+    return `${msgHint}${blockHint}`
+}
+
+function formatBoundaryUsageGuidance(): string {
+    return " Use exactly one of the listed injected IDs. For already compressed content, use its bN block ID."
 }
 
 function buildBoundaryLookup(

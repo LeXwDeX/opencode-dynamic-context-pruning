@@ -183,3 +183,105 @@ test("resolveBoundaryIds error explains compacted-out message IDs", () => {
         },
     )
 })
+
+test("resolveBoundaryIds invalid startId format includes available boundaries and usage guidance", () => {
+    const state = createSessionState()
+    const sessionID = "s1"
+
+    const messages = [
+        makeMessage(sessionID, "msg-anchor-1", "user", "anchor text"),
+        makeMessage(sessionID, "msg-end-1", "assistant", "end text"),
+    ]
+
+    assignMessageRefs(state, messages)
+    state.prune.messages.blocksById.set(1, buildBlock(1, "msg-anchor-1", "msg-compress-1"))
+
+    const context = buildSearchContext(state, messages)
+
+    assert.throws(
+        () => {
+            resolveBoundaryIds(context, state, "start-1", "m0002")
+        },
+        (err: Error) => {
+            assert.match(err.message, /startId is invalid/)
+            assert.match(err.message, /mNNNN/)
+            assert.match(err.message, /bN/)
+            assert.match(err.message, /Available message IDs: m0001, m0002/)
+            assert.match(err.message, /Available block IDs: b1/)
+            assert.match(err.message, /Use exactly one of the listed injected IDs/)
+            assert.match(err.message, /compressed content.*bN/)
+            return true
+        },
+    )
+})
+
+test("resolveBoundaryIds never-assigned message ID includes invalid reason and exact-ID guidance", () => {
+    const state = createSessionState()
+    const sessionID = "s1"
+
+    const messages = [
+        makeMessage(sessionID, "msg-1", "user", "text 1"),
+        makeMessage(sessionID, "msg-2", "assistant", "text 2"),
+        makeMessage(sessionID, "msg-3", "user", "text 3"),
+        makeMessage(sessionID, "msg-4", "assistant", "text 4"),
+        makeMessage(sessionID, "msg-5", "user", "text 5"),
+        makeMessage(sessionID, "msg-6", "assistant", "text 6"),
+        makeMessage(sessionID, "msg-7", "user", "text 7"),
+        makeMessage(sessionID, "msg-8", "assistant", "text 8"),
+        makeMessage(sessionID, "msg-9", "user", "text 9"),
+        makeMessage(sessionID, "msg-10", "assistant", "text 10"),
+        makeMessage(sessionID, "msg-11", "user", "text 11"),
+    ]
+
+    assignMessageRefs(state, messages)
+
+    const context = buildSearchContext(state, messages)
+
+    assert.throws(
+        () => {
+            resolveBoundaryIds(context, state, "m0572", "m0011")
+        },
+        (err: Error) => {
+            assert.match(err.message, /startId m0572 is not available \(invalid ID\)/)
+            assert.match(err.message, /Available message IDs: m0001 to m0011 \(11 total\)/)
+            assert.match(err.message, /Use exactly one of the listed injected IDs/)
+            return true
+        },
+    )
+})
+
+test("resolveBoundaryIds does not offer compressed original message IDs as boundaries", () => {
+    const state = createSessionState()
+    const sessionID = "s1"
+
+    const originalMessages = [
+        makeMessage(sessionID, "msg-anchor-1", "user", "anchor text"),
+        makeMessage(sessionID, "msg-compacted-1", "assistant", "compacted text"),
+        makeMessage(sessionID, "msg-end-1", "user", "end text"),
+    ]
+
+    assignMessageRefs(state, originalMessages)
+    const block = buildBlock(1, "msg-anchor-1", "msg-compress-1")
+    block.effectiveMessageIds = ["msg-anchor-1", "msg-compacted-1"]
+    state.prune.messages.blocksById.set(1, block)
+
+    const visibleMessages = originalMessages.filter(
+        (message) => message.info.id !== "msg-compacted-1",
+    )
+    const context = buildSearchContext(state, visibleMessages)
+
+    assert.throws(
+        () => {
+            resolveBoundaryIds(context, state, "m0002", "m0003")
+        },
+        (err: Error) => {
+            assert.match(err.message, /startId m0002 is not available/)
+            assert.match(err.message, /message was likely compacted out of the conversation/)
+            assert.match(err.message, /Available message IDs: m0001, m0003/)
+            assert.doesNotMatch(err.message, /Available message IDs:.*m0002/)
+            assert.match(err.message, /Available block IDs: b1/)
+            assert.match(err.message, /compressed content.*bN/)
+            return true
+        },
+    )
+})
