@@ -64,11 +64,13 @@ function buildSchema(externalModelEnabled: boolean) {
                     startId: tool.schema
                         .string()
                         .describe(
-                            "Message or block ID marking the beginning of range (e.g. m0001, b2)",
+                            "Injected message or block ID visible in the current context marking the beginning of the range. Do not invent IDs; use an exact visible mNNNN or bN boundary.",
                         ),
                     endId: tool.schema
                         .string()
-                        .describe("Message or block ID marking the end of range (e.g. m0012, b5)"),
+                        .describe(
+                            "Injected message or block ID visible in the current context marking the end of the range. Do not invent IDs; use an exact visible mNNNN or bN boundary.",
+                        ),
                     summary: summaryField,
                 }),
             )

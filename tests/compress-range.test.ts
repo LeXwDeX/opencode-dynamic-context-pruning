@@ -8,6 +8,15 @@ import { createSessionState, type WithParts } from "../lib/state"
 import type { PluginConfig } from "../lib/config"
 import { Logger } from "../lib/logger"
 
+type ToolDefinition = {
+    description?: string
+    args?: Record<string, any>
+    parameters?: Record<string, any>
+    _definition?: {
+        parameters?: Record<string, any>
+    }
+}
+
 const testDataHome = join(tmpdir(), `opencode-dcp-tests-${process.pid}`)
 const testConfigHome = join(tmpdir(), `opencode-dcp-config-tests-${process.pid}`)
 
@@ -123,6 +132,28 @@ function buildMessages(sessionID: string): WithParts[] {
         },
     ]
 }
+
+test("compress range tool schema does not suggest concrete message IDs", () => {
+    const state = createSessionState()
+    const tool = createCompressRangeTool({
+        client: {},
+        state,
+        logger: new Logger(false),
+        config: buildConfig(),
+        prompts: {
+            reload() {},
+            getRuntimePrompts() {
+                return { compressRange: "", compressMessage: "" }
+            },
+        },
+    } as any) as ToolDefinition
+
+    const serializedSchema = JSON.stringify(tool.args ?? tool.parameters ?? tool._definition ?? {})
+
+    assert.doesNotMatch(serializedSchema, /m\d{4}/)
+    assert.doesNotMatch(tool.description ?? "", /m\d{4}/)
+    assert.match(tool.description ?? "", /不要发明 ID/)
+})
 
 test("compress range rebuilds subagent message refs after session state was reset", async () => {
     const sessionID = `ses_subagent_compress_${Date.now()}`

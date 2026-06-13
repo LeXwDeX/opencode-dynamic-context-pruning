@@ -25,7 +25,9 @@ export function buildRangeFormatExtension(externalModelEnabled: boolean): string
     }
   ]
 }
-\`\`\`${externalHint}`
+\`\`\`
+
+边界 ID 必须从当前可见上下文中已有的注入 ID 精确选取；不要发明 ID，也不要根据顺序外推不存在的 ID。${externalHint}`
 }
 
 export function buildMessageFormatExtension(externalModelEnabled: boolean): string {
