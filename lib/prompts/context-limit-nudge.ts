@@ -1,18 +1,18 @@
 export const CONTEXT_LIMIT_NUDGE = `<dcp-system-reminder>
-严重警告：已达到最大上下文限制
+CRITICAL: max context limit reached.
 
-你当前处于或已超过配置的最大上下文阈值。这是紧急的上下文恢复时刻。
+You are at or beyond the configured max context threshold. This is an emergency context-recovery moment.
 
-你必须立即使用 \`compress\` 工具。在完成压缩之前，不要继续正常探索。
+You MUST call \`compress\` now. Do not continue normal exploration until compression is done.
 
-如果你正在进行关键的原子操作，先完成该原子步骤，然后立即压缩。
+If mid-atomic-step, finish that one step, then compress immediately.
 
-选择过程
-从较早的、已完成的历史开始，在一次操作中捕获尽可能多的过时上下文。
-除非最新的工作消息已明显结束，否则不要选择它们。
+Selection
+Start from older, already-finished history and capture as much stale context as possible in one pass.
+Do not select the latest working messages unless they are clearly concluded.
 
-摘要要求
-你的摘要必须覆盖所选消息中的所有关键细节，以确保工作可以继续。
-如果压缩范围包含用户消息，完整保留用户意图。对于较短的用户消息，优先使用直接引用以避免语义漂移。
+Summary requirements
+Your summary must cover all key details in the selected messages so work can continue.
+If the range contains user messages, preserve their intent fully. For short user messages, prefer direct quotes to avoid semantic drift.
 </dcp-system-reminder>
 `
