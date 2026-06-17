@@ -58,13 +58,13 @@ export function resolveBoundaryIds(
 
     if (parsedStartId === null) {
         issues.push(
-            `startId is invalid. Use an injected message ID (mNNNN) or block ID (bN).${hint}${guidance}`,
+            `startId is invalid (received ${JSON.stringify(startId)}). Use an injected message ID (mNNNN) or block ID (bN).${hint}${guidance}`,
         )
     }
 
     if (parsedEndId === null) {
         issues.push(
-            `endId is invalid. Use an injected message ID (mNNNN) or block ID (bN).${hint}${guidance}`,
+            `endId is invalid (received ${JSON.stringify(endId)}). Use an injected message ID (mNNNN) or block ID (bN).${hint}${guidance}`,
         )
     }
 

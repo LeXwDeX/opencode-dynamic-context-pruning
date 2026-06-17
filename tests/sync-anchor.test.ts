@@ -203,7 +203,7 @@ test("resolveBoundaryIds invalid startId format includes available boundaries an
             resolveBoundaryIds(context, state, "start-1", "m0002")
         },
         (err: Error) => {
-            assert.match(err.message, /startId is invalid/)
+            assert.match(err.message, /startId is invalid \(received "start-1"\)/)
             assert.match(err.message, /mNNNN/)
             assert.match(err.message, /bN/)
             assert.match(err.message, /Available message IDs: m0001, m0002/)
