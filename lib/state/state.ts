@@ -47,7 +47,7 @@ export const checkSession = async (
     const lastCompactionTimestamp = findLastCompactionTimestamp(messages)
     if (lastCompactionTimestamp > state.lastCompaction) {
         state.lastCompaction = lastCompactionTimestamp
-        resetOnCompaction(state)
+        resetOnCompaction(state, messages)
         logger.info("Detected compaction - reset stale state", {
             timestamp: lastCompactionTimestamp,
         })

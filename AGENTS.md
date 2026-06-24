@@ -18,7 +18,7 @@ OpenCode plugin (`@opencode-ai/plugin`). Entry: `index.ts` → returns hook hand
 
 - **`lib/hooks.ts`** — All 5 plugin hooks: `chat.system.transform`, `chat.messages.transform`, `text.complete`, `command.execute.before`, `event`
 - **`lib/compress/`** — Compress tool: `message.ts` (per-message mode), `range.ts` (range mode), `pipeline.ts` (shared prepare/finalize)
-- **`lib/state/`** — Session state: `types.ts` (SessionState), `persistence.ts` (disk save/load), `state.ts` (checkSession, init), `utils.ts` (resetOnCompaction — inert, only resets toolParameters)
+- **`lib/state/`** — Session state: `types.ts` (SessionState), `persistence.ts` (disk save/load), `state.ts` (checkSession, init), `utils.ts` (resetOnCompaction — GCs messageIds for removed messages after native compaction)
 - **`lib/messages/`** — Message processing: `inject/` (nudge injection), `priority.ts`, `prune.ts`, `reasoning-strip.ts`, `query.ts`, `shape.ts`
 - **`lib/prompts/`** — All prompts in **Chinese** (intentional — reduces XML tag hallucination with qwen models). `store.ts` loads custom overrides from disk.
 - **`lib/config.ts`** — Config resolution: global `~/.config/opencode/dcp.jsonc` → project `.opencode/dcp.jsonc`
@@ -36,7 +36,7 @@ OpenCode plugin (`@opencode-ai/plugin`). Entry: `index.ts` → returns hook hand
 - Test runner: `node:test` (not jest/vitest). Tests use `node:assert/strict`.
 - **Known failure**: `tests/prompts.test.ts:53` — Bun doesn't support nested `t.test()`. This is pre-existing and unrelated to changes.
 - Tests assert on **Chinese prompt text** — when changing prompts, update test regex patterns in `tests/message-priority.test.ts`, `tests/prompts.test.ts`, `tests/compress-message.test.ts`.
-- `resetOnCompaction` is **inert** — tests in `tests/message-ids.test.ts` assert state is preserved after compaction.
+- `resetOnCompaction` GCs messageIds for removed messages after native compaction — tests in `tests/message-ids.test.ts` assert stale aliases are cleaned.
 
 ## Formatting
 

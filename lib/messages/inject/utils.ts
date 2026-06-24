@@ -2,6 +2,7 @@ import type { SessionState, WithParts } from "../../state"
 import type { PluginConfig } from "../../config"
 import {
     appendGuidanceToDcpTag,
+    buildAvailableMessageIdGuidance,
     buildCompressedBlockGuidance,
     renderMessagePriorityGuidance,
 } from "../../prompts/extensions/nudge"
@@ -292,8 +293,12 @@ function applyRangeModeAnchoredNudge(
     messages: WithParts[],
     baseNudgeText: string,
     compressedBlockGuidance: string,
+    availableMessageIdGuidance: string,
 ): void {
-    const nudgeText = appendGuidanceToDcpTag(baseNudgeText, compressedBlockGuidance)
+    const combinedGuidance = [availableMessageIdGuidance, compressedBlockGuidance]
+        .filter((g) => g.trim().length > 0)
+        .join("\n\n")
+    const nudgeText = appendGuidanceToDcpTag(baseNudgeText, combinedGuidance)
     if (!nudgeText.trim()) {
         return
     }
@@ -307,6 +312,7 @@ function applyMessageModeAnchoredNudge(
     anchorMessageIds: Set<string>,
     messages: WithParts[],
     baseNudgeText: string,
+    availableMessageIdGuidance: string,
     compressionPriorities?: CompressionPriorityMap,
 ): void {
     for (const { message, index } of collectAnchoredMessages(anchorMessageIds, messages)) {
@@ -316,7 +322,10 @@ function applyMessageModeAnchoredNudge(
             index,
             MESSAGE_MODE_NUDGE_PRIORITY,
         )
-        const nudgeText = appendGuidanceToDcpTag(baseNudgeText, priorityGuidance)
+        const combinedGuidance = [availableMessageIdGuidance, priorityGuidance]
+            .filter((g) => g.trim().length > 0)
+            .join("\n\n")
+        const nudgeText = appendGuidanceToDcpTag(baseNudgeText, combinedGuidance)
         injectAnchoredNudge(message, nudgeText)
     }
 }
@@ -331,44 +340,52 @@ export function applyAnchoredNudges(
     const turnNudgeAnchors = collectTurnNudgeAnchors(state, config, messages)
 
     if (config.compress.mode === "message") {
+        const availableMessageIdGuidance = buildAvailableMessageIdGuidance(state, messages)
         applyMessageModeAnchoredNudge(
             state.nudges.contextLimitAnchors,
             messages,
             prompts.contextLimitNudge,
+            availableMessageIdGuidance,
             compressionPriorities,
         )
         applyMessageModeAnchoredNudge(
             turnNudgeAnchors,
             messages,
             prompts.turnNudge,
+            availableMessageIdGuidance,
             compressionPriorities,
         )
         applyMessageModeAnchoredNudge(
             state.nudges.iterationNudgeAnchors,
             messages,
             prompts.iterationNudge,
+            availableMessageIdGuidance,
             compressionPriorities,
         )
         return
     }
 
     const compressedBlockGuidance = buildCompressedBlockGuidance(state)
+    const availableMessageIdGuidance = buildAvailableMessageIdGuidance(state, messages)
     applyRangeModeAnchoredNudge(
         state.nudges.contextLimitAnchors,
         messages,
         prompts.contextLimitNudge,
         compressedBlockGuidance,
+        availableMessageIdGuidance,
     )
     applyRangeModeAnchoredNudge(
         turnNudgeAnchors,
         messages,
         prompts.turnNudge,
         compressedBlockGuidance,
+        availableMessageIdGuidance,
     )
     applyRangeModeAnchoredNudge(
         state.nudges.iterationNudgeAnchors,
         messages,
         prompts.iterationNudge,
         compressedBlockGuidance,
+        availableMessageIdGuidance,
     )
 }

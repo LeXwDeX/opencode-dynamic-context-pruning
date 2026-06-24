@@ -58,7 +58,7 @@ function buildCompactedMessages(sessionID: string): WithParts[] {
     ]
 }
 
-test("checkSession preserves message id aliases after native compaction", async () => {
+test("checkSession garbage-collects stale message id aliases after native compaction", async () => {
     const sessionID = `ses_message_ids_after_compaction_${Date.now()}`
     const messages = buildCompactedMessages(sessionID)
     const state = createSessionState()
@@ -74,8 +74,10 @@ test("checkSession preserves message id aliases after native compaction", async 
     await checkSession({} as any, state, logger, messages, false)
 
     assert.equal(state.lastCompaction, 2)
-    assert.equal(state.messageIds.byRawId.size, 2)
-    assert.equal(state.messageIds.byRef.size, 2)
+    assert.equal(state.messageIds.byRawId.has("old-message-9998"), false)
+    assert.equal(state.messageIds.byRawId.has("old-message-9999"), false)
+    assert.equal(state.messageIds.byRef.has("m9998"), false)
+    assert.equal(state.messageIds.byRef.has("m9999"), false)
     assert.equal(state.messageIds.nextRef, 5)
 
     const assigned = assignMessageRefs(state, messages)

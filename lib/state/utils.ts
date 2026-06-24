@@ -328,6 +328,19 @@ export function getActiveSummaryTokenUsage(state: SessionState): number {
     return total
 }
 
-export function resetOnCompaction(state: SessionState): void {
+export function resetOnCompaction(state: SessionState, messages: WithParts[] = []): void {
     state.toolParameters.clear()
+
+    if (messages.length === 0) {
+        return
+    }
+
+    const liveMessageIds = new Set(messages.map((msg) => msg.info.id))
+
+    for (const [ref, rawId] of state.messageIds.byRef) {
+        if (!liveMessageIds.has(rawId)) {
+            state.messageIds.byRef.delete(ref)
+            state.messageIds.byRawId.delete(rawId)
+        }
+    }
 }

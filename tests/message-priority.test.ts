@@ -415,8 +415,8 @@ test("message-mode nudges append to existing text parts and list only earlier vi
     assert.match((injectedNudge as any).text, /消息优先级上下文：/)
     assert.match((injectedNudge as any).text, /此点之前的高优先级消息 ID：m0001/)
     assert.doesNotMatch((injectedNudge as any).text, /m0002/)
-    assert.doesNotMatch((injectedNudge as any).text, /m0003/)
-    assert.doesNotMatch((injectedNudge as any).text, /m0004/)
+    assert.match((injectedNudge as any).text, /可用消息边界 ID：/)
+    assert.match((injectedNudge as any).text, /m0001, m0003, m0004/)
 })
 
 test("message-mode nudges exclude protected user messages from priority guidance", () => {
@@ -453,7 +453,8 @@ test("message-mode nudges exclude protected user messages from priority guidance
     const injectedNudge = messages[2]?.parts[0]
     assert.equal(injectedNudge?.type, "text")
     assert.match((injectedNudge as any).text, /此点之前的高优先级消息 ID：m0002/)
-    assert.doesNotMatch((injectedNudge as any).text, /m0001/)
+    assert.match((injectedNudge as any).text, /可用消息边界 ID：/)
+    assert.match((injectedNudge as any).text, /m0002/)
 })
 
 test("range-mode nudges append to existing text parts before tool outputs", () => {

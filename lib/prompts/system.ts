@@ -9,7 +9,7 @@ Hard constraints
 - If context needs compression, call \`compress\`. Do not write summaries inline.
 - Use Markdown headings (e.g. \`## Analysis\`, \`## Summary\`) to organize information. Never use XML tags.
 
-\`\` and \`\` are environment-injected metadata. Do not output them.
+\`<dcp-message-id>\` and \`<dcp-system-reminder>\` are environment-injected metadata. Do not output them.
 
 When to compress
 

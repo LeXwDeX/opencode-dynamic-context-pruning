@@ -1,4 +1,6 @@
-import type { SessionState } from "../../state"
+import type { SessionState, WithParts } from "../../state"
+import { isIgnoredUserMessage } from "../../messages/query"
+import { isMessageCompacted } from "../../state/utils"
 
 export function buildCompressedBlockGuidance(state: SessionState): string {
     const refs = Array.from(state.prune.messages.activeBlockIds)
@@ -12,6 +14,45 @@ export function buildCompressedBlockGuidance(state: SessionState): string {
         "压缩块上下文：",
         `- 此会话中的活跃压缩块：${blockCount} 个（${blockList}）`,
         "- 如果你选择的压缩范围包含任何列出的块，在摘要中使用 `(bN)` 恰好包含每个必需的占位符一次。",
+    ].join("\n")
+}
+
+export function buildAvailableMessageIdGuidance(
+    state: SessionState,
+    messages: WithParts[],
+): string {
+    const visibleIds = new Set(
+        messages
+            .filter((msg) => !isIgnoredUserMessage(msg) && !isMessageCompacted(state, msg))
+            .map((msg) => msg.info.id),
+    )
+
+    const refs = []
+    for (const [ref, rawId] of state.messageIds.byRef) {
+        if (visibleIds.has(rawId)) {
+            refs.push(ref)
+        }
+    }
+
+    refs.sort((a, b) => {
+        const numA = Number.parseInt(a.slice(1), 10)
+        const numB = Number.parseInt(b.slice(1), 10)
+        return numA - numB
+    })
+
+    if (refs.length === 0) {
+        return ""
+    }
+
+    const refList =
+        refs.length <= 15
+            ? refs.join(", ")
+            : `${refs[0]} 到 ${refs[refs.length - 1]}（共 ${refs.length} 个）`
+
+    return [
+        "可用消息边界 ID：",
+        `- 当前上下文中可作为 compress 边界的合法消息 ID：${refList}`,
+        "- 只从以上列表中选取 startId 和 endId。不要发明、外推或使用不在列表中的 ID。",
     ].join("\n")
 }
 
